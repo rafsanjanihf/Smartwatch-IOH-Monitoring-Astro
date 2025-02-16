@@ -1,0 +1,173 @@
+---
+import iohSmLogo from '/assets/images/ioh-sm-logo.png';
+---
+
+<header class="bg-white border-b border-gray-200 fixed top-0 right-0 left-0 md:left-64 h-16 z-10">
+  <div class="flex items-center justify-between h-full px-3 sm:px-6">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full">
+      <!-- Date Time Range Picker -->
+      <div id="date-range-picker" date-rangepicker class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 w-full sm:w-auto">
+        <div class="relative w-full sm:w-auto">
+          <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+            <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
+            </svg>
+          </div>
+          <input
+            id="datepicker-range-start"
+            name="start"
+            type="text"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5"
+            placeholder="Start date"
+          />
+        </div>
+        <span class="hidden sm:block mx-4 text-gray-500">to</span>
+        <div class="relative w-full sm:w-auto">
+          <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+            <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
+            </svg>
+          </div>
+          <input
+            id="datepicker-range-end"
+            name="end"
+            type="text"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5"
+            placeholder="End date"
+          />
+        </div>
+      </div>
+
+      <!-- User Controls -->
+      <div class="flex items-center space-x-2 sm:space-x-4 ml-auto">
+        <button class="p-2 hover:bg-gray-100 rounded-full hidden sm:block">
+          <i class="icon-help text-gray-600"></i>
+        </button>
+        <button class="p-2 hover:bg-gray-100 rounded-full">
+          <i class="icon-notifications text-gray-600"></i>
+        </button>
+        <div class="flex items-center space-x-2">
+          <span class="text-sm font-medium text-gray-700 hidden sm:block">Administrator</span>
+          <img
+            src={iohSmLogo.src}
+            alt="User"
+            class="w-8 h-8 rounded-full"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  import { Datepicker } from 'flowbite-datepicker';
+  import moment from 'moment';
+
+  // Types
+  interface DatepickerOptions {
+    format: string;
+    autohide: boolean;
+    defaultHour?: number;
+    defaultMinute?: number;
+  }
+
+  interface DateRange {
+    start: string;
+    end: string;
+  }
+
+  // Constants
+  const DATE_FORMAT = 'YYYY-MM-DD';
+  const PICKER_OPTIONS: DatepickerOptions = {
+    format: 'yyyy-mm-dd',
+    autohide: true
+  };
+
+  // Helper functions
+  function getElement(id: string): HTMLElement {
+    const element = document.getElementById(id);
+    if (!element) throw new Error(`Element with id '${id}' not found`);
+    return element;
+  }
+
+  function createDatePicker(element: HTMLElement, options: DatepickerOptions): Datepicker {
+    return new Datepicker(element, options);
+  }
+
+  function getDefaultDates(): DateRange {
+    const today = moment().set({ hour: 23, minute: 59 }).format(DATE_FORMAT);
+    const yesterday = moment()
+      .set({ hour: 0, minute: 0 })
+      .subtract(1, 'day')
+      .format(DATE_FORMAT);
+
+    return { start: yesterday, end: today };
+  }
+
+  function getCurrentDateRange(start: Date | null, end: Date | null): DateRange {
+    return {
+      start: start ? moment(start).format(DATE_FORMAT) : '',
+      end: end ? moment(end).format(DATE_FORMAT) : ''
+    };
+  }
+
+  function emitDateChangeEvent(dateRange: DateRange): void {
+    document.dispatchEvent(
+      new CustomEvent('daterange-change', { detail: dateRange })
+    );
+  }
+
+  // Initialize
+  const startElement = getElement('datepicker-range-start');
+  const endElement = getElement('datepicker-range-end');
+
+  const startPicker = createDatePicker(startElement, {
+    ...PICKER_OPTIONS,
+    defaultHour: 0,
+    defaultMinute: 0
+  });
+
+  const endPicker = createDatePicker(endElement, {
+    ...PICKER_OPTIONS,
+    defaultHour: 23,
+    defaultMinute: 59
+  });
+
+  // Set default dates
+  const defaultDates = getDefaultDates();
+  startPicker.setDate(defaultDates.start);
+  endPicker.setDate(defaultDates.end);
+
+  // Event handlers
+  function handleDateChange(): void {
+    const dateRange = getCurrentDateRange(
+      startPicker.getDate(),
+      endPicker.getDate()
+    );
+    emitDateChangeEvent(dateRange);
+  }
+
+  // Event listeners
+  startElement.addEventListener('changeDate', handleDateChange);
+  endElement.addEventListener('changeDate', handleDateChange);
+
+  // Initial trigger
+  handleDateChange();
+</script>
+
+<style>
+  .datepicker {
+    z-index: 60;
+  }
+
+  @media (max-width: 640px) {
+    .datepicker {
+      position: fixed;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%);
+      margin: 0;
+    }
+  }
+</style>

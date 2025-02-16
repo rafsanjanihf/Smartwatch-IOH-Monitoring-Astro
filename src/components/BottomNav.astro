@@ -1,0 +1,66 @@
+---
+const menuItems = [
+  { icon: "fa-home", label: "Dashboard", path: "/", active: false },
+  { icon: "fa-chart-line", label: "Sleep Monitoring", path: "/sleep-monitoring", active: false },
+  { icon: "fa-heart", label: "Vital Signs", path: "/vital-signs", active: true },
+  { icon: "fa-building", label: "Company Management", path: "/company", active: false },
+  { icon: "fa-users", label: "User Management", path: "/users", active: false },
+  { icon: "fa-user-group", label: "Groups", path: "/groups", active: false },
+  { icon: "fa-mobile-screen-button", label: "Device Management", path: "/devices", active: false },
+  { icon: "fa-cog", label: "Account Setting", path: "/settings", active: false },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<div class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-30">
+    <div class="flex justify-around items-center h-16">
+        <a href="/" class="flex flex-col items-center">
+            <i class="fa fa-home h-6 w-6" aria-hidden="true"></i>
+            <span class="text-xs">Dashboard</span>
+        </a>
+        <button id="menu-button" class="flex flex-col items-center">
+            <i class="fa fa-bars h-6 w-6" aria-hidden="true"></i>
+            <span class="text-xs">Menu</span>
+        </button>
+        <a href="/settings" class="flex flex-col items-center">
+            <i class="fa fa-cog h-6 w-6" aria-hidden="true"></i>
+            <span class="text-xs">Account</span>
+        </a>
+    </div>
+
+    <div id="menu-panel" class="hidden absolute bottom-16 left-0 w-full bg-white border-t border-gray-200">
+        <nav class="p-4">
+            <ul class="space-y-2">
+                {menuItems.map((item) => (
+                    <li key={item.label}>
+                        <a
+                            href={item.path}
+                            class={`flex items-center p-3 rounded-lg ${
+                                currentPath === item.path
+                                    ? "bg-blue-50 text-blue-600"
+                                    : "text-gray-600 hover:bg-gray-50"
+                            }`}
+                        >
+                            <span class="mr-3">
+                                <i class={`fa ${item.icon}`} aria-hidden="true"></i>
+                            </span>
+                            {item.label}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const menuButton = document.getElementById('menu-button');
+        const menuPanel = document.getElementById('menu-panel');
+
+        menuButton.addEventListener('click', () => {
+            menuPanel.classList.toggle('hidden');
+        });
+    });
+</script>

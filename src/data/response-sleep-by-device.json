@@ -1,0 +1,95 @@
+[
+  {
+    "id": "1886733376761700400",
+    "status": "published",
+    "date_created": null,
+    "date_updated": null,
+    "idStr": "1886733376761700352",
+    "type": 1,
+    "startReal": "1738340461",
+    "endReal": "1738345172",
+    "startSetting": 0,
+    "endSetting": 0,
+    "recordYear": 2025,
+    "recordMonth": 2,
+    "recordWeek": "4",
+    "recordDay": 1,
+    "dataSourceName": "raw:af80579a6ffeded3fe962668",
+    "sleepQuality": 0.24,
+    "sleepTotalTime": 4711,
+    "clearTotalTime": 4711,
+    "fastEyeTotalTime": 1083,
+    "simpleSleepTotalTime": 2003,
+    "deepSleepTotalTime": 1138,
+    "maxHeartRate": 80,
+    "minHeartRate": 51,
+    "avgHeartRate": 60.36,
+    "maxBloodOxygen": null,
+    "minBloodOxygen": null,
+    "avgBloodOxygen": null,
+    "maxBreatheRate": null,
+    "minBreatheRate": null,
+    "avgBreatheRate": null,
+    "device_id": "cfc098cd-889b-4ac9-858a-8d76ed7bb763",
+    "sleepMotion": [
+      {
+        "startTime": 1738340461000,
+        "endTime": 1738340569000,
+        "value": 1
+      },
+      {
+        "startTime": 1738340569000,
+        "endTime": 1738341219000,
+        "value": 4
+      },
+      {
+        "startTime": 1738341219000,
+        "endTime": 1738341923000,
+        "value": 3
+      },
+      {
+        "startTime": 1738341923000,
+        "endTime": 1738342411000,
+        "value": 4
+      },
+      {
+        "startTime": 1738342411000,
+        "endTime": 1738343276000,
+        "value": 3
+      },
+      {
+        "startTime": 1738343276000,
+        "endTime": 1738343764000,
+        "value": 2
+      },
+      {
+        "startTime": 1738343764000,
+        "endTime": 1738343980000,
+        "value": 1
+      },
+      {
+        "startTime": 1738343980000,
+        "endTime": 1738344359000,
+        "value": 2
+      },
+      {
+        "startTime": 1738344359000,
+        "endTime": 1738344793000,
+        "value": 3
+      },
+      {
+        "startTime": 1738344793000,
+        "endTime": 1738345009000,
+        "value": 2
+      },
+      {
+        "startTime": 1738345009000,
+        "endTime": 1738345172000,
+        "value": 1
+      }
+    ],
+    "bloodOxygenPeriod": null,
+    "breatheRatePeriod": null,
+    "heartRatePeriod": []
+  }
+]

@@ -1,0 +1,46 @@
+---
+const menuItems = [
+  { icon: "dashboard", label: "Dashboard", path: "/", active: false },
+  { icon: "sleep", label: "Sleep Monitoring", path: "/sleep-monitoring", active: false },
+  { icon: "vital", label: "Vital Signs", path: "/vital-signs", active: true },
+  // { icon: "company", label: "Company Management", path: "/company", active: false },
+  // { icon: "user", label: "User Management", path: "/users", active: false },
+  // { icon: "groups", label: "Groups", path: "/groups", active: false },
+  { icon: "device", label: "Device Management", path: "/devices", active: false },
+  // { icon: "settings", label: "Account Setting", path: "/settings", active: false },
+];
+import iohLgLogo from '/assets/images/ioh-lg-logo.png';
+
+// Dapatkan path halaman saat ini
+const currentPath = Astro.url.pathname;
+---
+
+<aside class="w-64 h-screen bg-white fixed left-0 top-0 border-r border-gray-200 z-20 md:block hidden">
+  <div class="p-4 border-b border-gray-200 flex items-center justify-center">
+    <img src={iohLgLogo.src} alt="Indosat" class="h-8" />
+  </div>
+
+  <nav class="p-4">
+    <ul class="space-y-2">
+      {
+        menuItems.map((item) => (
+          <li>
+            <a
+              href={item.path}
+              class={`flex items-center p-3 rounded-lg ${
+                currentPath === item.path
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <span class="mr-3">
+                <i class={`icon-${item.icon}`}></i>
+              </span>
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+</aside>

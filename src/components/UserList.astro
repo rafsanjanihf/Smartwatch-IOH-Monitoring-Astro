@@ -1,0 +1,36 @@
+---
+import type { Device } from '../types';
+
+interface Props {
+  users: Device[];
+}
+
+const { users } = Astro.props;
+---
+
+<div class="bg-white rounded-lg p-6">
+  <div class="flex justify-between items-center mb-4">
+    <div>
+      <h3 class="text-lg font-semibold">Users</h3>
+      <p class="text-sm text-gray-500">Track User Monitoring</p>
+    </div>
+    <a href="/users" class="text-blue-600 text-sm hover:underline">View All</a>
+  </div>
+  
+  <div class="space-y-4">
+    {users.map(user => (
+      <a href={`/users/${user.id}`} class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
+        <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+          <span class="text-gray-600 font-medium">{user.name?.charAt(0)}</span>
+        </div>
+        <div>
+          <p class="font-medium">{user.name}</p>
+          <p class="text-sm text-gray-500">{user.source_name}</p>
+        </div>
+        <div class="ml-auto">
+          <div class={`w-2 h-2 rounded-full ${user.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+        </div>
+      </a>
+    ))}
+  </div>
+</div>

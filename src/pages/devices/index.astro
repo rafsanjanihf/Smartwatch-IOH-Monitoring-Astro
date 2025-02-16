@@ -1,0 +1,23 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Sidebar from '../../components/Sidebar.astro';
+import Header from '../../components/Header.astro';
+import DeviceTable from '../../components/DeviceTable';
+import { api } from '../../utils/api';
+
+// Fetch devices data
+const initialDevices = await api.getAllDevices();
+---
+
+<Layout title="Device Management - Smartwatch Monitoring Solution">
+  <Sidebar />
+  <Header title="Device Management" />
+
+  <main class="ml-0 md:ml-64 pt-20 p-6">
+    <div class="bg-white rounded-lg shadow">
+      <DeviceTable devices={initialDevices} client:load />
+    </div>
+  </main>
+</Layout>
+
+
