@@ -11,10 +11,15 @@ interface SleepChartProps {
 
 interface SleepTimes {
   awakeTime: number;
+  awakeQuality: number;
   eyeMovementTime: number;
+  eyeMovementQuality: number;
   lightSleepTime: number;
+  lightSleepQuality: number;
   deepSleepTime: number;
+  deepSleepQuality: number;
   totalTime: number;
+  sleepQuality: number;
 }
 
 const SLEEP_STAGES = {
@@ -38,10 +43,15 @@ const SLEEP_STAGES = {
 
 const initialSleepTimes: SleepTimes = {
   awakeTime: 0,
+  awakeQuality: 0,
   eyeMovementTime: 0,
+  eyeMovementQuality: 0,
   lightSleepTime: 0,
+  lightSleepQuality: 0,
   deepSleepTime: 0,
+  deepSleepQuality: 0,
   totalTime: 0,
+  sleepQuality: 0,
 };
 
 const formatDuration = (minutes: number) => {
@@ -63,7 +73,62 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
         start ? moment(start).toISOString() : undefined,
         end ? moment(end).toISOString() : undefined,
       );
+
+      // Calculate stage qualities based on sleep motion distribution
+      const stageQualities = {
+        awake: { totalTime: 0, percentage: 0 },
+        eyeMovement: { totalTime: 0, percentage: 0 },
+        lightSleep: { totalTime: 0, percentage: 0 },
+        deepSleep: { totalTime: 0, percentage: 0 },
+      };
+
+      // Calculate total time and distribution for each stage
+      data.forEach((sleepRecord) => {
+        const totalSleepTime = sleepRecord.sleepTotalTime;
+
+        sleepRecord.sleepMotion?.forEach((motion) => {
+          const duration = (motion.endTime - motion.startTime) / (60 * 1000); // Convert to minutes
+
+          switch (motion.value) {
+            case SLEEP_STAGES.AWAKE.value:
+              stageQualities.awake.totalTime += duration;
+              break;
+            case SLEEP_STAGES.EYE_MOVEMENT.value:
+              stageQualities.eyeMovement.totalTime += duration;
+              break;
+            case SLEEP_STAGES.LIGHT_SLEEP.value:
+              stageQualities.lightSleep.totalTime += duration;
+              break;
+            case SLEEP_STAGES.DEEP_SLEEP.value:
+              stageQualities.deepSleep.totalTime += duration;
+              break;
+          }
+        });
+
+        // Calculate percentage of time spent in each stage
+        if (totalSleepTime > 0) {
+          stageQualities.awake.percentage = (stageQualities.awake.totalTime / totalSleepTime) * 100;
+          stageQualities.eyeMovement.percentage = (stageQualities.eyeMovement.totalTime / totalSleepTime) * 100;
+          stageQualities.lightSleep.percentage = (stageQualities.lightSleep.totalTime / totalSleepTime) * 100;
+          stageQualities.deepSleep.percentage = (stageQualities.deepSleep.totalTime / totalSleepTime) * 100;
+        }
+      });
+
+      // Calculate average sleep quality from all data (convert from decimal to percentage)
+      const avgSleepQuality =
+        data.reduce((sum, item) => {
+          return sum + (item.sleepQuality || 0) * 100; // Convert decimal to percentage
+        }, 0) / (data.length || 1);
+
       setCurrentData(data);
+      setSleepTimes((prev) => ({
+        ...prev,
+        sleepQuality: prev.sleepQuality,
+        awakeQuality: Math.round(stageQualities.awake.percentage),
+        eyeMovementQuality: Math.round(stageQualities.eyeMovement.percentage),
+        lightSleepQuality: Math.round(stageQualities.lightSleep.percentage),
+        deepSleepQuality: Math.round(stageQualities.deepSleep.percentage),
+      }));
     } catch (error) {
       console.error('Error fetching sleep data:', error);
       setCurrentData(null);
@@ -235,7 +300,10 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
           backgroundColor: '#F3F4F6',
           fillerColor: '#60A5FA',
           handleStyle: { color: '#3B82F6', borderColor: '#2563EB' },
-          emphasis: { handleStyle: { color: '#2563EB' } },
+          emphasis: {
+            handleStyle: { color: '#2563EB' },
+            handleLabel: { show: false },
+          },
           textStyle: { color: '#6B7280' },
           start: 0,
           end: 100,
@@ -269,8 +337,8 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
               height: 20,
             };
 
-            // Perbaikan tipe coordSys
-            const coordSys = params.coordSys as { x: number; y: number; width: number; height: number };
+            // Cast to unknown first, then to the desired type
+            const coordSys = params.coordSys as unknown as { x: number; y: number; width: number; height: number };
             const clippedShape = echarts.graphic.clipRectByRect(rectShape, coordSys);
 
             return (
@@ -300,20 +368,48 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
     chartInstance.current.setOption(option, true);
   }, [currentData]);
 
-  const StageCard = ({ stage, time }: { stage: keyof typeof SLEEP_STAGES; time: number }) => (
-    <div className={`p-2 sm:p-3 ${SLEEP_STAGES[stage].bgColor} rounded`}>
-      <div
-        className={`${SLEEP_STAGES[stage].textColor} text-sm sm:text-base truncate`}
-        title={SLEEP_STAGES[stage].name}
-      >
-        {SLEEP_STAGES[stage].name}
+  const StageCard = ({ stage, time }: { stage: keyof typeof SLEEP_STAGES; time: number }) => {
+    const getQualityForStage = () => {
+      switch (stage) {
+        case 'AWAKE':
+          return sleepTimes.awakeQuality;
+        case 'EYE_MOVEMENT':
+          return sleepTimes.eyeMovementQuality;
+        case 'LIGHT_SLEEP':
+          return sleepTimes.lightSleepQuality;
+        case 'DEEP_SLEEP':
+          return sleepTimes.deepSleepQuality;
+      }
+    };
+
+    const quality = getQualityForStage();
+
+    return (
+      <div className={`p-2 sm:p-3 ${SLEEP_STAGES[stage].bgColor} rounded`}>
+        <div
+          className={`${SLEEP_STAGES[stage].textColor} text-sm sm:text-base truncate`}
+          title={SLEEP_STAGES[stage].name}
+        >
+          {SLEEP_STAGES[stage].name}
+        </div>
+        <div className='text-sm sm:text-base truncate'>{formatDuration(time)}</div>
+        <div className='text-xs text-gray-600 truncate'>Quality: {quality > 0 ? `${quality}%` : '-'}</div>
       </div>
-      <div className='text-sm sm:text-base truncate'>{formatDuration(time)}</div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className={`bg-white rounded-lg p-4 sm:p-6 ${className}`}>
+      <div className='mb-4'>
+        <div className='grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-left mb-4'>
+          <div>
+            <h5 className='mb-2 text-2xl font-bold text-black'>{formatDuration(sleepTimes.totalTime)}</h5>
+            <p className='font-normal text-gray-700 dark:text-gray-400'>
+              Sleep Quality: {sleepTimes.sleepQuality > 0 ? `${sleepTimes.sleepQuality}%` : '-'}
+            </p>
+          </div>
+        </div>
+      </div>
       <div className='mb-4'>
         <div className='grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-center mb-4'>
           <StageCard stage='AWAKE' time={sleepTimes.awakeTime} />
