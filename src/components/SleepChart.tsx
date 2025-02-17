@@ -73,8 +73,8 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
   useEffect(() => {
     const handleDeviceSelect = (e: CustomEvent) => {
       const { deviceId } = e.detail;
-      const start = moment().subtract(1, 'day').toISOString();
-      const end = moment().toISOString();
+      const start = (document.getElementById('datepicker-range-start') as HTMLInputElement)?.value;
+      const end = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
       fetchSleepData(deviceId, start, end);
     };
 
