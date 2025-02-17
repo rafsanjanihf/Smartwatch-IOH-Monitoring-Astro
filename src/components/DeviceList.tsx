@@ -22,7 +22,7 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
     <div className={`bg-white rounded-lg p-6 ${className}`}>
       <h3 className='text-lg font-semibold mb-6'>List Devices</h3>
       <div className='space-y-4'>
-        {devices.map((device) => (
+        {devices.map((device, index) => (
           <div
             key={device.id}
             data-device-id={device.id}
@@ -37,7 +37,7 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
             <div className='flex items-center justify-between'>
               <div>
                 <h4 className='font-medium'>{device.name || 'Unnamed Device'}</h4>
-                <p className='text-sm text-gray-600'>{device.email_pic || 'No Email'}</p>
+                <p className='text-sm text-gray-600'>Operator {index + 1}</p>
               </div>
               <span
                 className={`px-2 py-1 rounded-full text-xs

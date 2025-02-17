@@ -1,7 +1,7 @@
 import type { Device, Health, HealthData, SleepData, SleepStats } from '../types';
 
 const BASE_URL = import.meta.env.PROD ? 'https://smartwatch-backend.terretech.id/api' : 'http://localhost:3001/api'; // Sesuaikan dengan port yang benar
-
+const companyOwner = import.meta.env.COMPANY_OWNER || 'terretech';
 // Fungsi helper untuk fetch dengan error handling
 async function fetchApi<T>(endpoint: string): Promise<T> {
   try {
@@ -22,7 +22,7 @@ async function fetchApi<T>(endpoint: string): Promise<T> {
 // Fungsi-fungsi untuk mengambil data
 export const api = {
   // Devices
-  getAllDevices: () => fetchApi<Device[]>('/devices'),
+  getAllDevices: () => fetchApi<Device[]>(`/devices?companyOwner=${companyOwner}`),
   getDevice: (id: string) => fetchApi<Device>(`/devices/${id}`),
 
   // Health Data
