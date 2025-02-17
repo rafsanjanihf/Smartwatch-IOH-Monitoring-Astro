@@ -3,6 +3,7 @@ import * as echarts from 'echarts';
 import type { SleepData } from '../types';
 import moment from 'moment';
 import { api } from '../utils/api';
+import { Switch } from '@headlessui/react';
 
 interface SleepChartProps {
   sleepData: SleepData[] | null;
@@ -15,6 +16,13 @@ interface SleepTimes {
   lightSleepTime: number;
   deepSleepTime: number;
   totalTime: number;
+}
+
+interface InfoCardProps {
+  label: string;
+  value: string | number;
+  unit?: string;
+  className?: string;
 }
 
 const SLEEP_STAGES = {
@@ -44,17 +52,30 @@ const initialSleepTimes: SleepTimes = {
   totalTime: 0,
 };
 
-const formatDuration = (minutes: number) => {
-  const hours = Math.floor(minutes / 60);
-  const mins = Math.round(minutes % 60);
+const formatDuration = (seconds: number) => {
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
   return `${hours}h ${mins}m`;
 };
+
+const InfoCard = ({ label, value, unit, className = '' }: InfoCardProps) => (
+  <div className={`p-3 bg-gray-50 rounded-lg ${className}`}>
+    <div className='text-sm text-gray-600 truncate' title={label}>
+      {label}
+    </div>
+    <div className='text-lg font-semibold truncate' title={`${value}${unit ? ` ${unit}` : ''}`}>
+      {value}
+      {unit && <span className='text-sm text-gray-500 ml-1'>{unit}</span>}
+    </div>
+  </div>
+);
 
 export default function SleepChart({ sleepData, className }: SleepChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
   const [currentData, setCurrentData] = useState<SleepData[] | null>(sleepData);
   const [sleepTimes, setSleepTimes] = useState<SleepTimes>(initialSleepTimes);
+  const [isListView, setIsListView] = useState(false);
 
   const fetchSleepData = async (deviceId: string, start?: string, end?: string) => {
     try {
@@ -114,9 +135,69 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
   useEffect(() => {
     if (!chartInstance.current || !currentData?.length) {
       if (chartInstance.current) {
+        const now = new Date();
+        const startOfDay = new Date(now);
+        startOfDay.setHours(0, 0, 0, 0);
+
         chartInstance.current.setOption({
+          title: {
+            text: 'Sleep Stages Distribution',
+            left: 'center',
+            top: 0,
+          },
+          tooltip: {
+            show: true,
+            trigger: 'axis',
+            axisPointer: {
+              type: 'line',
+              lineStyle: { color: '#6B7280', width: 1, type: 'dashed' },
+            },
+          },
+          grid: {
+            left: '5%',
+            right: '5%',
+            bottom: '15%',
+            top: '15%',
+            containLabel: true,
+          },
+          xAxis: {
+            type: 'time',
+            min: startOfDay.getTime(),
+            max: now.getTime(),
+            axisLabel: {
+              formatter: (value: number) => moment(value).format('HH:mm'),
+              hideOverlap: true,
+            },
+            splitLine: {
+              show: true,
+              lineStyle: { type: 'dashed', color: '#E5E7EB' },
+            },
+          },
+          yAxis: {
+            type: 'category',
+            data: Object.values(SLEEP_STAGES).map((s) => s.name),
+            inverse: true,
+            axisLine: { show: true },
+            axisTick: { show: true },
+          },
+          dataZoom: [
+            {
+              type: 'slider',
+              show: true,
+              xAxisIndex: [0],
+              bottom: '2%',
+              height: 20,
+              borderColor: 'transparent',
+              backgroundColor: '#F3F4F6',
+              fillerColor: '#60A5FA',
+              handleStyle: { color: '#3B82F6', borderColor: '#2563EB' },
+              emphasis: { handleStyle: { color: '#2563EB' } },
+            },
+          ],
           series: [
             {
+              type: 'custom',
+              renderItem: () => null,
               data: [],
             },
           ],
@@ -137,7 +218,7 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
           sleep.sleepMotion
             ?.sort((a, b) => a.startTime - b.startTime)
             .map((motion) => {
-              const duration = (motion.endTime - motion.startTime) / (60 * 1000);
+              const duration = (motion.endTime - motion.startTime) / 1000;
               const stage = Object.values(SLEEP_STAGES).find((s) => s.value === motion.value);
 
               if (stage) {
@@ -331,6 +412,97 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
         </div>
       </div>
       <div ref={chartRef} className='w-full' style={{ height: 'min(400px, 50vh)' }} />
+
+      <div className='mt-8'>
+        <div className='flex justify-between items-center mb-4'>
+          <h5 className='text-xl font-bold text-gray-900'>Additional Information</h5>
+          <Switch.Group>
+            <div className='flex items-center'>
+              <Switch.Label className='mr-3 text-sm text-gray-600'>List View</Switch.Label>
+              <Switch
+                checked={isListView}
+                onChange={setIsListView}
+                className={`${
+                  isListView ? 'bg-blue-600' : 'bg-gray-200'
+                } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
+              >
+                <span
+                  className={`${
+                    isListView ? 'translate-x-6' : 'translate-x-1'
+                  } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                />
+              </Switch>
+            </div>
+          </Switch.Group>
+        </div>
+
+        {currentData?.[0] &&
+          (isListView ? (
+            <div className='space-y-2'>
+              {Object.entries({
+                'Sleep Quality': { value: currentData[0].sleepQuality * 100, unit: '%' },
+                'Total Sleep Time': { value: formatDuration(currentData[0].sleepTotalTime), unit: '' },
+                'Clear Time': { value: formatDuration(currentData[0].clearTotalTime), unit: '' },
+                'REM Sleep': { value: formatDuration(currentData[0].fastEyeTotalTime), unit: '' },
+                'Light Sleep': { value: formatDuration(currentData[0].simpleSleepTotalTime), unit: '' },
+                'Deep Sleep': { value: formatDuration(currentData[0].deepSleepTotalTime), unit: '' },
+                'Heart Rate': {
+                  value: `${currentData[0].minHeartRate}-${currentData[0].maxHeartRate}`,
+                  unit: 'bpm',
+                  avg: currentData[0].avgHeartRate,
+                },
+                'Blood Oxygen': {
+                  value: `${currentData[0].minBloodOxygen}-${currentData[0].maxBloodOxygen}`,
+                  unit: '%',
+                  avg: currentData[0].avgBloodOxygen,
+                },
+                'Breathing Rate': {
+                  value: `${currentData[0].minBreatheRate}-${currentData[0].maxBreatheRate}`,
+                  unit: 'bpm',
+                  avg: currentData[0].avgBreatheRate,
+                },
+              }).map(([label, data]) => (
+                <div key={label} className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'>
+                  <span className='text-gray-600'>{label}</span>
+                  <span className='font-semibold'>
+                    {data.value}
+                    {data.unit && <span className='text-sm text-gray-500 ml-1'>{data.unit}</span>}
+                    {data.avg && (
+                      <span className='text-sm text-gray-500 ml-2'>
+                        (avg: {Math.round(data.avg)}
+                        {data.unit})
+                      </span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'>
+              <InfoCard label='Sleep Quality' value={currentData[0].sleepQuality * 100} unit='%' />
+              <InfoCard label='Total Sleep Time' value={formatDuration(currentData[0].sleepTotalTime)} />
+              <InfoCard label='Clear Time' value={formatDuration(currentData[0].clearTotalTime)} />
+              <InfoCard label='REM Sleep' value={formatDuration(currentData[0].fastEyeTotalTime)} />
+              <InfoCard label='Light Sleep' value={formatDuration(currentData[0].simpleSleepTotalTime)} />
+              <InfoCard label='Deep Sleep' value={formatDuration(currentData[0].deepSleepTotalTime)} />
+              <InfoCard
+                label='Heart Rate'
+                value={`${currentData[0].minHeartRate}-${currentData[0].maxHeartRate}`}
+                unit='bpm'
+              />
+              <InfoCard
+                label='Blood Oxygen'
+                value={`${currentData[0].minBloodOxygen}-${currentData[0].maxBloodOxygen}`}
+                unit='%'
+              />
+              <InfoCard
+                label='Breathing Rate'
+                value={`${currentData[0].minBreatheRate}-${currentData[0].maxBreatheRate}`}
+                unit='bpm'
+              />
+            </div>
+          ))}
+      </div>
     </div>
   );
 }

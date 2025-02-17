@@ -49,8 +49,8 @@ try {
   let startDate: string | null = null;
   let endDate: string | null = null;
 
-  startDate = (document.getElementById('datepicker-range-start') as HTMLInputElement)?.value;
   endDate = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
+  startDate = endDate;
   // Add event listener for device selection and date range
   document.addEventListener('DOMContentLoaded', () => {
     // Device selection handler
@@ -62,7 +62,7 @@ try {
     }) as EventListener);
 
     // Date range handler
-    document.addEventListener('datepicker-range-start', ((e: CustomEvent) => {
+    document.addEventListener('datepicker-range-end', ((e: CustomEvent) => {
       startDate = e.detail.start;
       endDate = e.detail.end;
       if (selectedDeviceId) {
@@ -118,14 +118,15 @@ try {
         client:load
         deviceCount={devices.filter(device => device.status === 'published').length}
         offlineCount={devices.filter(device => device.status !== 'published').length}
-        abnormalHeartRate={{
-          count: 13,
-          minBpm: 50,
-          maxBpm: 120
+        heartRateStats={{
+          avgBpm: 80,
+          maxBpm: 100,
+          minBpm: 60
         }}
-        abnormalSleep={{
-          count: 23,
-          duration: "06h 00m"
+        sleepStats={{
+          avgDuration: 8,
+          maxDuration: 10,
+          minDuration: 6
         }}
       />
 

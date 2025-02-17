@@ -59,6 +59,12 @@ export interface SleepData {
   maxHeartRate: number;
   minHeartRate: number;
   avgHeartRate: number;
+  maxBloodOxygen: number;
+  minBloodOxygen: number;
+  avgBloodOxygen: number;
+  maxBreatheRate: number;
+  minBreatheRate: number;
+  avgBreatheRate: number;
   device_id: string;
   sleepMotion: {
     startTime: number;

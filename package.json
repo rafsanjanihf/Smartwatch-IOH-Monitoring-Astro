@@ -12,6 +12,7 @@
   "dependencies": {
     "@astrojs/react": "^4.2.0",
     "@astrojs/tailwind": "^5.1.0",
+    "@headlessui/react": "^2.2.0",
     "@iconify-json/heroicons": "^1.2.2",
     "@sentry/astro": "^9.1.0",
     "@sentry/browser": "^9.1.0",
