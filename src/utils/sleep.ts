@@ -68,3 +68,76 @@ export function calculateSleepTimes(sleepData: SleepData[] | null): SleepTimes {
 export function formatDuration(minutes: number): string {
   return `${Math.floor(minutes / 60)}h ${Math.round(minutes % 60)}m`;
 }
+
+interface DateRange {
+  start: string;
+  end: string;
+}
+
+interface LoadingState {
+  loading: boolean;
+}
+
+// Helper to emit custom events
+function emitEvent<T>(eventName: string, detail: T) {
+  document.dispatchEvent(
+    new CustomEvent(eventName, {
+      detail,
+      bubbles: true,
+    }),
+  );
+}
+
+// Handle loading state
+function setLoadingState(loading: boolean) {
+  emitEvent<LoadingState>('loading-state', { loading });
+}
+
+// Get selected or first device ID
+function getActiveDeviceId(): string | null {
+  const selectedDevice = document.querySelector('[data-device-list] .bg-blue-50');
+  const deviceId = selectedDevice?.getAttribute('data-device-id');
+
+  if (!deviceId) {
+    const firstDevice = document.querySelector('[data-device-list] [data-device-id]');
+    const firstDeviceId = firstDevice?.getAttribute('data-device-id');
+
+    if (firstDeviceId && firstDevice instanceof HTMLElement) {
+      firstDevice.classList.add('bg-blue-50');
+      return firstDeviceId;
+    }
+    return null;
+  }
+
+  return deviceId;
+}
+
+// Fetch and update sleep data
+export async function fetchAndUpdateSleepData(dateRange: DateRange): Promise<void> {
+  const deviceId = getActiveDeviceId();
+  if (!deviceId) {
+    console.warn('No device selected or available');
+    emitEvent('sleep-data-update', null);
+    return;
+  }
+
+  try {
+    setLoadingState(true);
+
+    const response = await fetch(
+      `${import.meta.env.PUBLIC_API_URL}/api/sleep/device/${deviceId}?` +
+        `startDate=${moment(dateRange.start).toISOString()}&` +
+        `endDate=${moment(dateRange.end).toISOString()}`,
+    );
+
+    if (!response.ok) throw new Error('Failed to fetch sleep data');
+
+    const sleepData = await response.json();
+    emitEvent('sleep-data-update', sleepData);
+  } catch (error) {
+    console.error('Error fetching sleep data:', error);
+    emitEvent('sleep-data-update', null);
+  } finally {
+    setLoadingState(false);
+  }
+}

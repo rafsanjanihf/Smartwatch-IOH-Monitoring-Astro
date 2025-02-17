@@ -35,6 +35,7 @@ export const api = {
     const query = new URLSearchParams();
     if (startDate) query.append('startDate', startDate);
     if (endDate) query.append('endDate', endDate);
+    console.log('getDeviceSleepData', deviceId, startDate, endDate);
     return fetchApi<SleepData[]>(`/sleep/device/${deviceId}${query.toString() ? `?${query.toString()}` : ''}`);
   },
   getSleepStats: (deviceId: string) => fetchApi<SleepStats>(`/sleep/stats/${deviceId}`),

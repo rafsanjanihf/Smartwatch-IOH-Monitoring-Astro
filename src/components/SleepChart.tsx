@@ -58,6 +58,7 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
 
   const fetchSleepData = async (deviceId: string, start?: string, end?: string) => {
     try {
+      console.log('fetching sleep data', deviceId, start, end);
       const data = await api.getDeviceSleepData(
         deviceId,
         start ? moment(start).toISOString() : undefined,
@@ -73,8 +74,8 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
   useEffect(() => {
     const handleDeviceSelect = (e: CustomEvent) => {
       const { deviceId } = e.detail;
-      const start = (document.getElementById('datepicker-range-start') as HTMLInputElement)?.value;
       const end = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
+      const start = moment(end).format('YYYY-MM-DD');
       fetchSleepData(deviceId, start, end);
     };
 

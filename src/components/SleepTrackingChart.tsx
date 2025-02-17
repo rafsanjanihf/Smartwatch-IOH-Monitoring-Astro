@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import moment from 'moment';
+import 'moment-timezone';
 import type { SleepData } from '../types';
 import { api } from '../utils/api';
 
@@ -30,6 +31,7 @@ export default function SleepTrackingChart({
     const handleDateRangeChange = async (e: CustomEvent) => {
       try {
         const { start, end } = e.detail;
+        console.log('handleDateRangeChange', start, end);
         const data = await api.getDeviceSleepData(initialSelectedDeviceId, start, end);
         setSleepData(data);
       } catch (error) {
@@ -42,7 +44,7 @@ export default function SleepTrackingChart({
       try {
         const { deviceId } = e.detail;
         const end = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
-        const start = (document.getElementById('datepicker-range-start') as HTMLInputElement)?.value;
+        const start = moment(end).format('YYYY-MM-DD');
 
         const data = await api.getDeviceSleepData(deviceId, moment(start).toISOString(), moment(end).toISOString());
         setSleepData(data);
@@ -84,8 +86,8 @@ export default function SleepTrackingChart({
           }
 
           try {
-            const startMoment = moment(motion.startTime);
-            const endMoment = moment(motion.endTime);
+            const startMoment = moment(motion.startTime).tz('Asia/Jakarta');
+            const endMoment = moment(motion.endTime).tz('Asia/Jakarta');
 
             if (!startMoment.isValid() || !endMoment.isValid()) {
               return;
