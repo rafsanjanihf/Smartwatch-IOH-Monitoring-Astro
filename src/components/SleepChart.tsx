@@ -456,11 +456,6 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
                   unit: '%',
                   avg: currentData[0].avgBloodOxygen,
                 },
-                'Breathing Rate': {
-                  value: `${currentData[0].minBreatheRate}-${currentData[0].maxBreatheRate}`,
-                  unit: 'bpm',
-                  avg: currentData[0].avgBreatheRate,
-                },
               }).map(([label, data]) => (
                 <div key={label} className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'>
                   <span className='text-gray-600'>{label}</span>
@@ -494,11 +489,6 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
                 label='Blood Oxygen'
                 value={`${currentData[0].minBloodOxygen}-${currentData[0].maxBloodOxygen}`}
                 unit='%'
-              />
-              <InfoCard
-                label='Breathing Rate'
-                value={`${currentData[0].minBreatheRate}-${currentData[0].maxBreatheRate}`}
-                unit='bpm'
               />
             </div>
           ))}
