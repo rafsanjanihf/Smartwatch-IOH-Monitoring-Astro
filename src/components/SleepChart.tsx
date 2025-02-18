@@ -399,7 +399,7 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
       <div className='mb-4'>
         <div className='grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-left mb-4'>
           <div>
-            <h5 className='mb-2 text-2xl font-bold text-black'>{formatDuration(sleepTimes.totalTime)}</h5>
+            <h5 className='mb-2 text-2xl font-bold text-black'>Sleep Montitoring</h5>
           </div>
         </div>
       </div>
@@ -442,10 +442,6 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
               {Object.entries({
                 'Sleep Quality': { value: currentData[0].sleepQuality * 100, unit: '%' },
                 'Total Sleep Time': { value: formatDuration(currentData[0].sleepTotalTime), unit: '' },
-                'Clear Time': { value: formatDuration(currentData[0].clearTotalTime), unit: '' },
-                'REM Sleep': { value: formatDuration(currentData[0].fastEyeTotalTime), unit: '' },
-                'Light Sleep': { value: formatDuration(currentData[0].simpleSleepTotalTime), unit: '' },
-                'Deep Sleep': { value: formatDuration(currentData[0].deepSleepTotalTime), unit: '' },
                 'Heart Rate': {
                   value: `${currentData[0].minHeartRate}-${currentData[0].maxHeartRate}`,
                   unit: 'bpm',
@@ -476,10 +472,6 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
             <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'>
               <InfoCard label='Sleep Quality' value={currentData[0].sleepQuality * 100} unit='%' />
               <InfoCard label='Total Sleep Time' value={formatDuration(currentData[0].sleepTotalTime)} />
-              <InfoCard label='Clear Time' value={formatDuration(currentData[0].clearTotalTime)} />
-              <InfoCard label='REM Sleep' value={formatDuration(currentData[0].fastEyeTotalTime)} />
-              <InfoCard label='Light Sleep' value={formatDuration(currentData[0].simpleSleepTotalTime)} />
-              <InfoCard label='Deep Sleep' value={formatDuration(currentData[0].deepSleepTotalTime)} />
               <InfoCard
                 label='Heart Rate'
                 value={`${currentData[0].minHeartRate}-${currentData[0].maxHeartRate}`}
