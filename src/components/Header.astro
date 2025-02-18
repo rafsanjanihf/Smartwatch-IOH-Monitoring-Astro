@@ -103,7 +103,9 @@ import iohSmLogo from '/assets/images/ioh-sm-logo.png';
   endElement.addEventListener('changeDate', handleDateChange);
 
   // Initial data fetch
-  handleDateChange();
+  setTimeout(() => {
+    handleDateChange();
+  }, 2000);
 </script>
 
 <style>
