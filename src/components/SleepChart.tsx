@@ -397,13 +397,11 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
   return (
     <div className={`bg-white rounded-lg p-4 sm:p-6 ${className}`}>
       <div className='mb-4'>
-        <div className='grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-left mb-4'>
-          <div>
-            <h5 className='mb-2 text-2xl font-bold text-black'>
-              Sleep Montitoring{' '}
-              <span className='text-sm text-blue-500'>Total Duration: {formatDuration(sleepTimes.totalTime)}</span>
-            </h5>
-          </div>
+        <div className='text-left mb-4'>
+          <h5 className='mb-2 text-2xl font-bold text-black'>
+            Sleep Montitoring
+            <span className='text-sm text-blue-500'>&nbsp;Total Duration: {formatDuration(sleepTimes.totalTime)}</span>
+          </h5>
         </div>
       </div>
       <div className='mb-4'>
