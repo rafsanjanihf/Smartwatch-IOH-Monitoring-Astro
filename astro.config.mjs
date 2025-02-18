@@ -7,4 +7,5 @@ import spotlightjs from '@spotlightjs/astro';
 
 export default defineConfig({
   integrations: [tailwind(), react(), sentry(), spotlightjs()],
+  output: 'server',
 });
