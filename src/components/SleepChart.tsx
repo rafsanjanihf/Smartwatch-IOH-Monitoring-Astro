@@ -440,8 +440,8 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
           (isListView ? (
             <div className='space-y-2'>
               {Object.entries({
-                'Sleep Quality': { value: currentData[0].sleepQuality * 100, unit: '%' },
                 'Total Sleep Time': { value: formatDuration(currentData[0].sleepTotalTime), unit: '' },
+                'Sleep Quality': { value: currentData[0].sleepQuality * 100, unit: '%' },
                 'Heart Rate': {
                   value: `${currentData[0].minHeartRate}-${currentData[0].maxHeartRate}`,
                   unit: 'bpm',
@@ -470,8 +470,8 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
             </div>
           ) : (
             <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'>
-              <InfoCard label='Sleep Quality' value={currentData[0].sleepQuality * 100} unit='%' />
               <InfoCard label='Total Sleep Time' value={formatDuration(currentData[0].sleepTotalTime)} />
+              <InfoCard label='Sleep Quality' value={currentData[0].sleepQuality * 100} unit='%' />
               <InfoCard
                 label='Heart Rate'
                 value={`${currentData[0].minHeartRate}-${currentData[0].maxHeartRate}`}
