@@ -229,8 +229,8 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
                     <p className='text-sm text-gray-600'>Operator {index + 1}</p>
                     {deviceSleepData && (
                       <p className='text-xs text-gray-500 mt-1'>
-                        Sleep Time: {Math.round(deviceSleepData.sleepTotalTime / 3600)}h{' '}
-                        {Math.round((deviceSleepData.sleepTotalTime % 3600) / 60)}m
+                        Sleep Time: {Math.floor(deviceSleepData.sleepTotalTime / 3600)}h{' '}
+                        {Math.floor((deviceSleepData.sleepTotalTime % 3600) / 60)}m
                       </p>
                     )}
                   </div>
