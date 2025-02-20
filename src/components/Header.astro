@@ -75,19 +75,28 @@ import iohSmLogo from '/assets/images/ioh-sm-logo.png';
 
     const formattedDate = moment(selectedDate).format(DATE_FORMAT);
 
+    // Dispatch date change event
+    document.dispatchEvent(
+      new CustomEvent('datepicker-range-end', {
+        detail: selectedDate
+      })
+    );
+
     // Trigger click on active device
     const activeDevice = document.querySelector('[data-device-id].border-blue-500');
     if (activeDevice) {
-      activeDevice.dispatchEvent(new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        view: window
-      }));
+      activeDevice.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+        })
+      );
     }
 
     await fetchAndUpdateSleepData({
       start: formattedDate,
-      end: formattedDate
+      end: formattedDate,
     });
   }
 
