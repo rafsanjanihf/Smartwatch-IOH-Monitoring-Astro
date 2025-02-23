@@ -85,7 +85,11 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
         start ? moment(start).toISOString() : undefined,
         end ? moment(end).toISOString() : undefined,
       );
-      setCurrentData(data);
+      if (data[0].sleepMotion.length > 0) {
+        setCurrentData(data);
+      } else {
+        setCurrentData(null);
+      }
     } catch (error) {
       console.error('Error fetching sleep data:', error);
       setCurrentData(null);

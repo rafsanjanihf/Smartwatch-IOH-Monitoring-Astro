@@ -227,15 +227,20 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
                   <div>
                     <h4 className='font-medium'>{device.name || 'Unnamed Device'}</h4>
                     <p className='text-sm text-gray-600'>Operator {index + 1}</p>
-                    {deviceSleepData && (
+                    {deviceSleepData && deviceSleepData.sleepTotalTime > 0 && (
                       <p className='text-xs text-gray-500 mt-1'>
-                        Sleep Time: {Math.floor(deviceSleepData.sleepTotalTime / 3600)}h{' '}
-                        {Math.floor((deviceSleepData.sleepTotalTime % 3600) / 60)}m
+                        Sleep Time:{' '}
+                        {deviceSleepData.sleepTotalTime
+                          ? Math.floor(deviceSleepData.sleepTotalTime / 3600) +
+                            'h ' +
+                            Math.floor((deviceSleepData.sleepTotalTime % 3600) / 60) +
+                            'm'
+                          : ''}
                       </p>
                     )}
                   </div>
                   <div className='flex flex-col items-end gap-2'>
-                    {deviceSleepData ? (
+                    {deviceSleepData && deviceSleepData.sleepTotalTime > 0 ? (
                       <span
                         className={`px-2 py-1 rounded-full text-xs
                           ${
