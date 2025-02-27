@@ -48,7 +48,7 @@ export default function SleepSummary({ healthData }: SleepSummaryProps) {
         <div className='grid grid-cols-4 text-sm'>
           <div className='text-gray-500'>Sleep Quality</div>
           <div className='font-medium text-emerald-500'>
-            {(latestData.sleepQuality * 100).toFixed(1)} <span className='text-xs'>%</span>
+            {(latestData.sleepQuality * 100).toFixed(2)} <span className='text-xs'>%</span>
           </div>
           <div className='font-medium text-red-500'>-</div>
           <div className='font-medium'>-</div>
