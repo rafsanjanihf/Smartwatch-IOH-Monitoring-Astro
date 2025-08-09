@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
-import type { SleepData } from '../types';
+import type { SleepData, Device } from '../types';
 import moment from 'moment';
 import { api } from '../utils/api';
 import { Switch } from '@headlessui/react';
 
 interface SleepChartProps {
   sleepData: SleepData[] | null;
+  devices?: Device[];
   className?: string;
 }
 
@@ -70,12 +71,13 @@ const InfoCard = ({ label, value, unit, className = '' }: InfoCardProps) => (
   </div>
 );
 
-export default function SleepChart({ sleepData, className }: SleepChartProps) {
+export default function SleepChart({ sleepData, devices = [], className }: SleepChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
   const [currentData, setCurrentData] = useState<SleepData[] | null>(sleepData);
   const [sleepTimes, setSleepTimes] = useState<SleepTimes>(initialSleepTimes);
   const [isListView, setIsListView] = useState(true);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(devices[0]?.id || null);
 
   const fetchSleepData = async (deviceId: string, start?: string, end?: string) => {
     try {
@@ -99,6 +101,7 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
   useEffect(() => {
     const handleDeviceSelect = (e: CustomEvent) => {
       const { deviceId } = e.detail;
+      setSelectedDeviceId(deviceId);
       const end = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
       const start = moment(end).format('YYYY-MM-DD');
       fetchSleepData(deviceId, start, end);
@@ -398,14 +401,29 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
     </div>
   );
 
+  // Get selected device name
+  const selectedDevice = devices.find(device => device.id === selectedDeviceId);
+  const deviceName = selectedDevice?.name || 'Unknown Device';
+
   return (
     <div className={`bg-white rounded-lg p-4 lg:p-6 ${className}`}>
       <div className='mb-3 lg:mb-4'>
         <div className='text-left mb-3 lg:mb-4'>
-          <h5 className='mb-2 text-lg lg:text-2xl font-bold text-black'>
-            Sleep Monitoring
-            <span className='text-xs lg:text-sm text-blue-500 block lg:inline'>&nbsp;Total Duration: {formatDuration(sleepTimes.totalTime)}</span>
-          </h5>
+          <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 lg:gap-4'>
+            <h5 className='text-lg lg:text-2xl font-bold text-gray-900'>
+              Sleep Monitoring
+              <span className='text-sm lg:text-lg text-blue-600 font-medium ml-2'>
+                - {deviceName}
+              </span>
+            </h5>
+            <div className='flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-3 lg:px-4 py-2 rounded-lg border border-blue-200'>
+              <div className='w-2 h-2 bg-blue-500 rounded-full animate-pulse'></div>
+              <span className='text-xs lg:text-sm text-gray-600 font-medium'>Total Duration:</span>
+              <span className='text-sm lg:text-lg font-bold text-blue-700'>
+                {formatDuration(sleepTimes.totalTime)}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
       <div className='mb-3 lg:mb-4'>

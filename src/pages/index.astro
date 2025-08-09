@@ -41,6 +41,21 @@ try {
   console.error('Error fetching sleep by device:', error);
 }
 
+// Fetch all sleep data untuk menghitung total sleep records
+let allSleepData: SleepData[] = [];
+let sleepRecordsCount = 0;
+try {
+  if (devices.length > 0) {
+    const deviceIds = devices.map(d => d.id).join(',');
+    allSleepData = await api.getAllSleepData(deviceIds);
+    
+    // Hitung Normal Sleep + Abnormal Sleep (exclude No Data)
+    sleepRecordsCount = allSleepData.filter(sleep => sleep.sleepTotalTime > 0).length;
+  }
+} catch (error) {
+  console.error('Error fetching all sleep data:', error);
+}
+
 ---
 
 <script>
@@ -117,7 +132,7 @@ try {
       <StatisticsCards
         client:load
         deviceCount={devices.filter(device => device.status === 'published').length}
-        offlineCount={devices.filter(device => device.status !== 'published').length}
+        sleepRecordsCount={sleepRecordsCount}
         heartRateStats={{
           avgBpm: 80,
           maxBpm: 100,
@@ -140,6 +155,7 @@ try {
         />
         <SleepChart
           sleepData={sleepByDevice}
+          devices={devices}
           client:load
           className="lg:col-span-7 xl:col-span-8"
         />

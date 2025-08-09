@@ -2,7 +2,7 @@ import type { FC } from 'react';
 
 interface StatisticsCardsProps {
   deviceCount: number;
-  offlineCount: number;
+  sleepRecordsCount: number;
   heartRateStats: {
     avgBpm: number;
     maxBpm: number;
@@ -28,7 +28,7 @@ const InfoIcon = () => (
   </div>
 );
 
-const StatisticsCards: FC<StatisticsCardsProps> = ({ deviceCount, offlineCount, heartRateStats, sleepStats }) => {
+const StatisticsCards: FC<StatisticsCardsProps> = ({ deviceCount, sleepRecordsCount, heartRateStats, sleepStats }) => {
   return (
     <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4'>
       <div className='bg-[#474F7C] p-4 lg:p-6 rounded-lg flex items-center justify-between text-white'>
@@ -38,10 +38,12 @@ const StatisticsCards: FC<StatisticsCardsProps> = ({ deviceCount, offlineCount, 
         </div>
       </div>
 
-      <div className='bg-white p-4 lg:p-6 rounded-lg flex items-center justify-between shadow-sm'>
+      <div className='bg-white p-3 lg:p-6 rounded-lg flex items-center justify-between shadow-sm'>
         <div>
-          <h3 className='text-xl lg:text-2xl xl:text-4xl font-bold mb-1 lg:mb-2'>{offlineCount}</h3>
-          <p className='text-xs lg:text-sm text-gray-600'>Device Offline</p>
+          <h3 className='text-xl lg:text-2xl xl:text-4xl font-bold mb-1 lg:mb-2'>{sleepRecordsCount}</h3>
+          <p className='text-xs lg:text-sm text-gray-600 leading-tight whitespace-nowrap overflow-hidden text-ellipsis'>
+            Sleep Records
+          </p>
         </div>
       </div>
 
