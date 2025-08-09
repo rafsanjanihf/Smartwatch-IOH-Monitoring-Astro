@@ -1,0 +1,214 @@
+openapi: 3.0.0
+info:
+  title: API Monitoring Kesehatan
+  description: API untuk monitoring data kesehatan dan tidur dari perangkat
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3001/api
+    description: Server Pengembangan
+
+paths:
+  /devices:
+    get:
+      summary: Mendapatkan semua perangkat
+      responses:
+        '200':
+          description: Daftar perangkat berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+
+  /devices/{id}:
+    get:
+      summary: Mendapatkan perangkat berdasarkan ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detail perangkat berhasil diambil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '404':
+          description: Perangkat tidak ditemukan
+
+  /health:
+    get:
+      summary: Mendapatkan semua data kesehatan
+      responses:
+        '200':
+          description: Data kesehatan berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HealthData'
+
+  /health/device/{deviceId}:
+    get:
+      summary: Mendapatkan data kesehatan berdasarkan ID perangkat
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Data kesehatan perangkat berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HealthData'
+
+  /sleep:
+    get:
+      summary: Mendapatkan semua data tidur
+      responses:
+        '200':
+          description: Data tidur berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SleepData'
+
+  /sleep/device/{deviceId}:
+    get:
+      summary: Mendapatkan data tidur berdasarkan ID perangkat
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Data tidur perangkat berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SleepData'
+
+  /sleep/stats/{deviceId}:
+    get:
+      summary: Mendapatkan statistik kualitas tidur
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Statistik tidur berhasil diambil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SleepStats'
+
+components:
+  schemas:
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    HealthData:
+      type: object
+      properties:
+        id:
+          type: string
+        device_id:
+          type: string
+        heart_rate:
+          type: number
+        blood_oxygen:
+          type: number
+        temperature:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+
+    SleepData:
+      type: object
+      properties:
+        id:
+          type: string
+        device_id:
+          type: string
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        quality:
+          type: string
+          enum: [good, fair, poor]
+        duration:
+          type: number
+          description: Durasi tidur dalam menit
+
+    SleepStats:
+      type: object
+      properties:
+        average_duration:
+          type: number
+          description: Rata-rata durasi tidur dalam menit
+        quality_distribution:
+          type: object
+          properties:
+            good:
+              type: number
+            fair:
+              type: number
+            poor:
+              type: number
+        total_records:
+          type: number
+
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+              message:
+                type: string
+
+tags:
+  - name: Devices
+    description: Operasi terkait perangkat
+  - name: Health
+    description: Operasi terkait data kesehatan
+  - name: Sleep
+    description: Operasi terkait data tidur

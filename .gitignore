@@ -155,3 +155,7 @@ dist/
 .env.production
 .env.development
 package-lock.json
+
+
+.htaccess
+.user.ini
