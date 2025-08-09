@@ -92,7 +92,7 @@ try {
     }
 
     try {
-      const data = await api.getDeviceSleepData(deviceId, start, end);
+      const data = await (window as any).api.getDeviceSleepData(deviceId, start, end);
       document.dispatchEvent(new CustomEvent('sleep-data-update', { detail: data }));
     } catch (error) {
       console.error('Error fetching sleep data:', error);

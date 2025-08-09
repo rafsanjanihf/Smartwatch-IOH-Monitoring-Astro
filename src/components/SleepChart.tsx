@@ -78,6 +78,7 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
   const [sleepTimes, setSleepTimes] = useState<SleepTimes>(initialSleepTimes);
   const [isListView, setIsListView] = useState(true);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(devices[0]?.id || null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const fetchSleepData = async (deviceId: string, start?: string, end?: string) => {
     try {
@@ -130,7 +131,16 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
     if (!chartRef.current) return;
 
     chartInstance.current = echarts.init(chartRef.current);
-    const handleResize = () => chartInstance.current?.resize();
+    
+    const handleResize = () => {
+      chartInstance.current?.resize();
+      // Update mobile state based on window width
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    
+    // Set initial mobile state
+    setIsMobile(window.innerWidth < 1024);
+    
     window.addEventListener('resize', handleResize);
 
     return () => {
@@ -295,7 +305,13 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
           lineStyle: { color: '#6B7280', width: 1, type: 'dashed' },
         },
       },
-      grid: { left: '5%', right: '5%', bottom: '15%', top: '15%', containLabel: true },
+      grid: { 
+        left: isMobile ? '2%' : '1%', 
+        right: isMobile ? '2%' : '1%', 
+        bottom: '20%', 
+        top: '15%', 
+        containLabel: true 
+      },
       xAxis: {
         type: 'time',
         min: timeRange.min,
@@ -310,8 +326,15 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
         type: 'category',
         data: activeStagesList.map((s) => s.name),
         inverse: true,
-        axisLine: { show: true },
-        axisTick: { show: true },
+        axisLine: { show: !isMobile },
+        axisTick: { show: !isMobile },
+        axisLabel: { 
+          show: !isMobile,
+          margin: 10,
+          fontSize: 12,
+          color: '#4B5563',
+          fontWeight: 500
+        },
       },
       dataZoom: [
         {
@@ -375,19 +398,29 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
         },
       ],
       legend: {
+        show: true,
         data: activeStagesList.map((stage) => ({
           name: stage.name,
           icon: 'rect',
           itemStyle: { color: stage.color },
         })),
-        bottom: 40,
-        textStyle: { color: '#4B5563' },
+        bottom: 5,
+        textStyle: { 
+          color: '#374151', 
+          fontSize: 13,
+          fontWeight: 500
+        },
         selectedMode: false,
+        orient: 'horizontal',
+        left: 'center',
+        itemGap: 20,
+        itemWidth: 14,
+        itemHeight: 14,
       },
     };
 
     chartInstance.current.setOption(option, true);
-  }, [currentData]);
+  }, [currentData, isMobile]);
 
   const StageCard = ({ stage, time }: { stage: keyof typeof SLEEP_STAGES; time: number }) => (
     <div className={`p-2 lg:p-3 ${SLEEP_STAGES[stage].bgColor} rounded`}>

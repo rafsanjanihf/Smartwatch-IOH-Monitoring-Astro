@@ -135,36 +135,36 @@ export default function SleepTrackingChart({
     <div className={`bg-white rounded-lg p-4 sm:p-6 ${className}`}>
       <h3 className='text-lg font-semibold mb-4 sm:mb-6 truncate'>Sleep Logs</h3>
       <div className='max-h-[calc(100vh-300px)] overflow-auto'>
-        <table className='min-w-full'>
+        <table className='w-full table-auto'>
           <thead className='sticky top-0 bg-white'>
             <tr className='border-b'>
-              <th className='p-2 sm:p-3 text-left text-sm sm:text-base'>Start Time</th>
-              <th className='p-2 sm:p-3 text-left text-sm sm:text-base'>End Time</th>
-              <th className='hidden sm:table-cell p-2 sm:p-3 text-left text-sm sm:text-base'>Duration</th>
-              <th className='p-2 sm:p-3 text-left text-sm sm:text-base'>Quality</th>
+              <th className='p-2 sm:p-3 text-left text-xs sm:text-base font-semibold'>Start Time</th>
+              <th className='p-2 sm:p-3 text-left text-xs sm:text-base font-semibold'>End Time</th>
+              <th className='hidden sm:table-cell p-2 sm:p-3 text-left text-sm sm:text-base font-semibold'>Duration</th>
+              <th className='p-2 sm:p-3 text-left text-xs sm:text-base font-semibold'>Quality</th>
             </tr>
           </thead>
           <tbody>
             {processedData.length > 0 ? (
               processedData.map((data) => (
                 <tr key={data.id} className='border-b hover:bg-gray-50'>
-                  <td className='p-2 sm:p-3 text-sm whitespace-nowrap'>
-                    <div className='truncate max-w-[120px] sm:max-w-none' title={data.startTime}>
+                  <td className='p-2 sm:p-3 text-xs sm:text-sm'>
+                    <div className='break-words' title={data.startTime}>
                       {data.startTime}
                     </div>
                   </td>
-                  <td className='p-2 sm:p-3 text-sm whitespace-nowrap'>
-                    <div className='truncate max-w-[120px] sm:max-w-none' title={data.endTime}>
+                  <td className='p-2 sm:p-3 text-xs sm:text-sm'>
+                    <div className='break-words' title={data.endTime}>
                       {data.endTime}
                     </div>
                   </td>
-                  <td className='hidden sm:table-cell p-2 sm:p-3 text-sm whitespace-nowrap'>
-                    <div className='truncate' title={data.duration}>
+                  <td className='hidden sm:table-cell p-2 sm:p-3 text-sm'>
+                    <div title={data.duration}>
                       {data.duration}
                     </div>
                   </td>
-                  <td className='p-2 sm:p-3 text-sm whitespace-nowrap'>
-                    <div className='truncate max-w-[100px] sm:max-w-none' title={data.quality}>
+                  <td className='p-2 sm:p-3 text-xs sm:text-sm'>
+                    <div className='break-words' title={data.quality}>
                       {data.quality}
                     </div>
                   </td>
