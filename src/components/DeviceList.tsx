@@ -252,7 +252,7 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
                         {deviceSleepData.sleepTotalTime >= 21600 ? 'Normal Sleep' : 'Abnormal Sleep'}
                       </span>
                     ) : (
-                      <span className='px-2 py-1 rounded-full text-xs text-gray-800 bg-stone-300'>Offline</span>
+                      <span className='px-2 py-1 rounded-full text-xs text-gray-800 bg-stone-300'>No Sleep Data</span>
                     )}
                   </div>
                 </div>
