@@ -75,7 +75,7 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
   const chartInstance = useRef<echarts.ECharts | null>(null);
   const [currentData, setCurrentData] = useState<SleepData[] | null>(sleepData);
   const [sleepTimes, setSleepTimes] = useState<SleepTimes>(initialSleepTimes);
-  const [isListView, setIsListView] = useState(false);
+  const [isListView, setIsListView] = useState(true);
 
   const fetchSleepData = async (deviceId: string, start?: string, end?: string) => {
     try {
@@ -416,7 +416,7 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
           <StageCard stage='DEEP_SLEEP' time={sleepTimes.deepSleepTime} />
         </div>
       </div>
-      <div ref={chartRef} className='w-full' style={{ height: 'min(400px, 50vh)' }} />
+      <div ref={chartRef} className='w-full' style={{ height: 'min(220px, 40vh)' }} />
 
       <div className='mt-8'>
         <div className='flex justify-between items-center mb-4'>
