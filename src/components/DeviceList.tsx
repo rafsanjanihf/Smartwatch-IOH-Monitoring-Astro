@@ -11,8 +11,17 @@ interface DeviceListProps {
 type FilterOption = 'all' | 'normal' | 'abnormal' | 'nodata';
 
 export default function DeviceList({ devices: initialDevices, className }: DeviceListProps) {
-  const [devices, setDevices] = useState<Device[]>(initialDevices);
-  const [activeDeviceId, setActiveDeviceId] = useState<string | null>(devices[0]?.id || null);
+  // Sort devices alphabetically by name first
+  const sortedDevices = useMemo(() => {
+    return [...initialDevices].sort((a, b) => {
+      const nameA = (a.name || 'Unnamed Device').toLowerCase();
+      const nameB = (b.name || 'Unnamed Device').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, [initialDevices]);
+
+  const [devices, setDevices] = useState<Device[]>(sortedDevices);
+  const [activeDeviceId, setActiveDeviceId] = useState<string | null>(sortedDevices[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState<FilterOption>('all');
   const [sleepData, setSleepData] = useState<SleepData[]>([]);
@@ -67,6 +76,20 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
 
     fetchSleepData();
   }, [devices]);
+
+  // Auto-select first device on initial load (alphabetically first)
+  useEffect(() => {
+    if (sortedDevices.length > 0 && !activeDeviceId) {
+      const firstDevice = sortedDevices[0];
+      setActiveDeviceId(firstDevice.id);
+      // Dispatch device-select event to notify other components
+      document.dispatchEvent(
+        new CustomEvent('device-select', {
+          detail: { deviceId: firstDevice.id },
+        }),
+      );
+    }
+  }, [sortedDevices, activeDeviceId]);
 
   // Listen for date changes
   useEffect(() => {
@@ -125,7 +148,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
 
   // Filter devices based on search query and sleep data
   const filteredDevices = useMemo(() => {
-    return devices.filter((device) => {
+    const filtered = devices.filter((device) => {
       // First apply search filter
       const matchesSearch =
         device.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -157,6 +180,13 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       }
 
       return true;
+    });
+
+    // Sort devices alphabetically by name
+    return filtered.sort((a, b) => {
+      const nameA = (a.name || 'Unnamed Device').toLowerCase();
+      const nameB = (b.name || 'Unnamed Device').toLowerCase();
+      return nameA.localeCompare(nameB);
     });
   }, [devices, searchQuery, filterOption, sleepData]);
 

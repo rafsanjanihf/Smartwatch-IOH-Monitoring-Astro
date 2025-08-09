@@ -26,6 +26,13 @@ export default function SleepTrackingChart({
   const [processedData, setProcessedData] = useState<ProcessedSleepData[]>([]);
   const [sleepData, setSleepData] = useState<SleepData[] | null>(initialSleepData);
 
+  // Initialize data on component mount
+  useEffect(() => {
+    if (initialSleepData && initialSleepData.length > 0) {
+      setSleepData(initialSleepData);
+    }
+  }, [initialSleepData]);
+
   // Menangani perubahan perangkat dan rentang tanggal
   useEffect(() => {
     const handleDateRangeChange = async (e: CustomEvent) => {
@@ -54,14 +61,20 @@ export default function SleepTrackingChart({
       }
     };
 
+    const handleSleepDataUpdate = (e: CustomEvent) => {
+      setSleepData(e.detail);
+    };
+
     // Menambahkan event listeners
     document.addEventListener('daterange-change', handleDateRangeChange as EventListener);
     document.addEventListener('device-select', handleDeviceSelect as EventListener);
+    document.addEventListener('sleep-data-update', handleSleepDataUpdate as EventListener);
 
     // Membersihkan event listeners
     return () => {
       document.removeEventListener('daterange-change', handleDateRangeChange as EventListener);
       document.removeEventListener('device-select', handleDeviceSelect as EventListener);
+      document.removeEventListener('sleep-data-update', handleSleepDataUpdate as EventListener);
     };
   }, [initialSelectedDeviceId]);
 

@@ -80,6 +80,13 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(devices[0]?.id || null);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Initialize data on component mount
+  useEffect(() => {
+    if (sleepData && sleepData.length > 0) {
+      setCurrentData(sleepData);
+    }
+  }, [sleepData]);
+
   const fetchSleepData = async (deviceId: string, start?: string, end?: string) => {
     try {
       console.log('fetching sleep data', deviceId, start, end);

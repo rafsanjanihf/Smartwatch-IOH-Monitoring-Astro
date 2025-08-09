@@ -16,6 +16,12 @@ import StatisticsCards from '../components/StatisticsCards';
 let devices: Device[] = [];
 try {
   devices = await api.getAllDevices();
+  // Sort devices alphabetically by name
+  devices.sort((a, b) => {
+    const nameA = (a.name || 'Unnamed Device').toLowerCase();
+    const nameB = (b.name || 'Unnamed Device').toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
 } catch (error) {
   console.error('Error fetching devices:', error);
 }
@@ -55,11 +61,16 @@ try {
 
 ---
 
-<script>
+<script define:vars={{ devices }}>
   // Initialize state
   let selectedDeviceId: string | null = null;
   let startDate: string | null = null;
   let endDate: string | null = null;
+
+  // Initialize with first device if available
+  if (devices.length > 0) {
+    selectedDeviceId = devices[0].id;
+  }
 
   endDate = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
   startDate = endDate;
