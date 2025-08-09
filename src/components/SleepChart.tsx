@@ -59,13 +59,13 @@ const formatDuration = (seconds: number) => {
 };
 
 const InfoCard = ({ label, value, unit, className = '' }: InfoCardProps) => (
-  <div className={`p-3 bg-gray-50 rounded-lg ${className}`}>
-    <div className='text-sm text-gray-600 truncate' title={label}>
+  <div className={`p-3 lg:p-4 bg-gray-50 rounded-lg ${className}`}>
+    <div className='text-xs lg:text-sm text-gray-600 truncate' title={label}>
       {label}
     </div>
-    <div className='text-lg font-semibold truncate' title={`${value}${unit ? ` ${unit}` : ''}`}>
+    <div className='text-sm lg:text-lg font-semibold truncate' title={`${value}${unit ? ` ${unit}` : ''}`}>
       {value}
-      {unit && <span className='text-sm text-gray-500 ml-1'>{unit}</span>}
+      {unit && <span className='text-xs lg:text-sm text-gray-500 ml-1'>{unit}</span>}
     </div>
   </div>
 );
@@ -387,43 +387,43 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
   }, [currentData]);
 
   const StageCard = ({ stage, time }: { stage: keyof typeof SLEEP_STAGES; time: number }) => (
-    <div className={`p-2 sm:p-3 ${SLEEP_STAGES[stage].bgColor} rounded`}>
+    <div className={`p-2 lg:p-3 ${SLEEP_STAGES[stage].bgColor} rounded`}>
       <div
-        className={`${SLEEP_STAGES[stage].textColor} text-sm sm:text-base truncate`}
+        className={`${SLEEP_STAGES[stage].textColor} text-xs lg:text-sm truncate`}
         title={SLEEP_STAGES[stage].name}
       >
         {SLEEP_STAGES[stage].name}
       </div>
-      <div className='text-sm sm:text-base truncate'>{formatDuration(time)}</div>
+      <div className='text-xs lg:text-sm font-medium truncate'>{formatDuration(time)}</div>
     </div>
   );
 
   return (
-    <div className={`bg-white rounded-lg p-4 sm:p-6 ${className}`}>
-      <div className='mb-4'>
-        <div className='text-left mb-4'>
-          <h5 className='mb-2 text-2xl font-bold text-black'>
-            Sleep Montitoring
-            <span className='text-sm text-blue-500'>&nbsp;Total Duration: {formatDuration(sleepTimes.totalTime)}</span>
+    <div className={`bg-white rounded-lg p-4 lg:p-6 ${className}`}>
+      <div className='mb-3 lg:mb-4'>
+        <div className='text-left mb-3 lg:mb-4'>
+          <h5 className='mb-2 text-lg lg:text-2xl font-bold text-black'>
+            Sleep Monitoring
+            <span className='text-xs lg:text-sm text-blue-500 block lg:inline'>&nbsp;Total Duration: {formatDuration(sleepTimes.totalTime)}</span>
           </h5>
         </div>
       </div>
-      <div className='mb-4'>
-        <div className='grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-center mb-4'>
+      <div className='mb-3 lg:mb-4'>
+        <div className='grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 text-center mb-3 lg:mb-4'>
           <StageCard stage='AWAKE' time={sleepTimes.awakeTime} />
           <StageCard stage='EYE_MOVEMENT' time={sleepTimes.eyeMovementTime} />
           <StageCard stage='LIGHT_SLEEP' time={sleepTimes.lightSleepTime} />
           <StageCard stage='DEEP_SLEEP' time={sleepTimes.deepSleepTime} />
         </div>
       </div>
-      <div ref={chartRef} className='w-full' style={{ height: 'min(220px, 40vh)' }} />
+      <div ref={chartRef} className='w-full' style={{ height: 'min(200px, 35vh)' }} />
 
-      <div className='mt-8'>
-        <div className='flex justify-between items-center mb-4'>
-          <h5 className='text-xl font-bold text-gray-900'>Additional Information</h5>
+      <div className='mt-6 lg:mt-8'>
+        <div className='flex justify-between items-center mb-3 lg:mb-4'>
+          <h5 className='text-lg lg:text-xl font-bold text-gray-900'>Additional Information</h5>
           <Switch.Group>
             <div className='flex items-center'>
-              <Switch.Label className='mr-3 text-sm text-gray-600'>List View</Switch.Label>
+              <Switch.Label className='mr-2 lg:mr-3 text-xs lg:text-sm text-gray-600'>List View</Switch.Label>
               <Switch
                 checked={isListView}
                 onChange={setIsListView}
@@ -474,7 +474,7 @@ export default function SleepChart({ sleepData, className }: SleepChartProps) {
               ))}
             </div>
           ) : (
-            <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'>
+            <div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-4'>
               <InfoCard label='Total Sleep Time' value={formatDuration(currentData[0].sleepTotalTime)} />
               <InfoCard label='Sleep Quality' value={(currentData[0].sleepQuality * 100).toFixed(2)} unit='%' />
               <InfoCard

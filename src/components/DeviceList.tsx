@@ -169,11 +169,11 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
   };
 
   return (
-    <div className={`bg-white rounded-lg p-6 ${className}`}>
-      <h3 className='text-lg font-semibold mb-4'>List Devices</h3>
+    <div className={`bg-white rounded-lg p-4 lg:p-6 ${className}`}>
+      <h3 className='text-base lg:text-lg font-semibold mb-3 lg:mb-4'>List Devices</h3>
 
       {/* Search and Filter Controls */}
-      <div className='space-y-3 mb-6'>
+      <div className='space-y-2 lg:space-y-3 mb-4 lg:mb-6'>
         {/* Search Input */}
         <div className='relative'>
           <input
@@ -181,7 +181,7 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
             placeholder='Search devices...'
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+            className='w-full px-3 lg:px-4 py-2 text-sm lg:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
           />
           <svg
             className='absolute right-3 top-2.5 h-5 w-5 text-gray-400'
@@ -199,17 +199,17 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
         </div>
 
         {/* Filter Options */}
-        <div className='flex space-x-2'>
+        <div className='flex gap-2 lg:gap-3 overflow-x-auto pb-2 scrollbar-hide'>
           <button
             onClick={() => setFilterOption('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+            className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0
               ${filterOption === 'all' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           >
             All
           </button>
           <button
             onClick={() => setFilterOption('normal')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+            className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0
               ${
                 filterOption === 'normal'
                   ? 'bg-green-100 text-green-700'
@@ -220,7 +220,7 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
           </button>
           <button
             onClick={() => setFilterOption('abnormal')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+            className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0
               ${
                 filterOption === 'abnormal' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
@@ -229,7 +229,7 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
           </button>
           <button
             onClick={() => setFilterOption('nodata')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+            className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0
               ${
                 filterOption === 'nodata' ? 'bg-gray-300 text-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
@@ -240,7 +240,7 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
       </div>
 
       {/* Device List */}
-      <div className='space-y-4 max-h-[500px] overflow-y-auto'>
+      <div className='space-y-3 lg:space-y-4 max-h-[400px] lg:max-h-[500px] overflow-y-auto'>
         {isLoading ? (
           <div className='text-center py-8 text-gray-500'>Loading devices...</div>
         ) : filteredDevices.length === 0 ? (
@@ -253,7 +253,7 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
                 key={device.id}
                 data-device-id={device.id}
                 onClick={() => handleDeviceClick(device.id)}
-                className={`p-4 rounded-lg cursor-pointer transition-colors
+                className={`p-3 lg:p-4 rounded-lg cursor-pointer transition-colors
                   ${
                     activeDeviceId === device.id
                       ? 'bg-blue-50 border-2 border-blue-500'
@@ -262,8 +262,8 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
               >
                 <div className='flex items-center justify-between'>
                   <div>
-                    <h4 className='font-medium'>{device.name || 'Unnamed Device'}</h4>
-                    <p className='text-sm text-gray-600'>Operator {index + 1}</p>
+                    <h4 className='text-sm lg:text-base font-medium'>{device.name || 'Unnamed Device'}</h4>
+                    <p className='text-xs lg:text-sm text-gray-600'>Operator {index + 1}</p>
                     {deviceSleepData && deviceSleepData.sleepTotalTime > 0 && (
                       <p className='text-xs text-gray-500 mt-1'>
                         Sleep Time:{' '}
