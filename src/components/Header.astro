@@ -3,12 +3,12 @@ import iohSmLogo from '/assets/images/ioh-sm-logo.png';
 ---
 
 <header class="bg-white border-b border-gray-200 fixed top-0 right-0 left-0 md:left-64 h-16 z-10">
-  <div class="flex items-center justify-between h-full px-3 sm:px-6">
-    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full">
-      <!-- Date Picker -->
-      <div id="date-range-picker" class="flex items-center w-full sm:w-auto">
-        <div class="relative w-full sm:w-auto">
-          <div class="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+  <div class="flex items-center justify-between h-full px-3 sm:px-4 lg:px-6">
+    <!-- Date Picker Section -->
+    <div class="flex-1 flex justify-start md:justify-start md:flex-initial">
+      <div id="date-range-picker" class="flex items-center">
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
               <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
             </svg>
@@ -17,28 +17,30 @@ import iohSmLogo from '/assets/images/ioh-sm-logo.png';
             id="datepicker-range-end"
             name="end"
             type="text"
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full ps-10 p-2.5"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-48 lg:w-56 pl-10 pr-3 py-2.5 transition-colors"
             placeholder="Select date"
           />
         </div>
       </div>
+    </div>
 
-      <!-- User Controls -->
-      <div class="flex items-center space-x-2 sm:space-x-4 ml-auto">
-        <button class="p-2 hover:bg-gray-100 rounded-full hidden sm:block">
-          <i class="icon-help text-gray-600"></i>
-        </button>
-        <button class="p-2 hover:bg-gray-100 rounded-full">
-          <i class="icon-notifications text-gray-600"></i>
-        </button>
-        <div class="flex items-center space-x-2">
-          <span class="text-sm font-medium text-gray-700 hidden sm:block">Administrator</span>
+    <!-- User Controls -->
+    <div class="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
+      <!-- User Profile -->
+      <div class="flex items-center space-x-2 ml-2">
+        <!-- User name - Hidden on small screens -->
+        <span class="text-sm font-medium text-gray-700">Administrator</span>
+        
+        <!-- User avatar -->
+        <div class="relative">
           <img
             src={iohSmLogo.src}
-            alt="User"
-            class="w-8 h-8 rounded-full"
+            alt="User Avatar"
+            class="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-gray-200 hover:border-gray-300 transition-colors cursor-pointer"
             loading="lazy"
           />
+          <!-- Online status indicator -->
+          <span class="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 border-2 border-white rounded-full"></span>
         </div>
       </div>
     </div>
@@ -66,6 +68,35 @@ import iohSmLogo from '/assets/images/ioh-sm-logo.png';
 
   function createDatePicker(element: HTMLElement, options: object) {
     return new Datepicker(element, options);
+  }
+
+  // Mobile menu toggle handler
+  function initializeMobileMenu() {
+    const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+    const sidebar = document.querySelector('[data-sidebar]') || document.querySelector('aside');
+    
+    if (mobileMenuToggle && sidebar) {
+      mobileMenuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('-translate-x-full');
+        sidebar.classList.toggle('translate-x-0');
+        
+        // Toggle overlay
+        let overlay = document.getElementById('sidebar-overlay');
+        if (!overlay) {
+          overlay = document.createElement('div');
+          overlay.id = 'sidebar-overlay';
+          overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden';
+          overlay.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            sidebar.classList.remove('translate-x-0');
+            overlay?.remove();
+          });
+          document.body.appendChild(overlay);
+        } else {
+          overlay.remove();
+        }
+      });
+    }
   }
 
   // Date change handler
@@ -100,35 +131,109 @@ import iohSmLogo from '/assets/images/ioh-sm-logo.png';
     });
   }
 
-  // Initialize
-  const endElement = getElement('datepicker-range-end');
-  const endPicker = createDatePicker(endElement, PICKER_OPTIONS);
+  // Initialize components
+  function initialize() {
+    // Initialize date picker
+    const endElement = getElement('datepicker-range-end');
+    const endPicker = createDatePicker(endElement, PICKER_OPTIONS);
 
-  // Set default date
-  const today = moment().format(DATE_FORMAT);
-  endPicker.setDate(today);
+    // Set default date
+    const today = moment().format(DATE_FORMAT);
+    endPicker.setDate(today);
 
-  // Event listeners
-  endElement.addEventListener('changeDate', handleDateChange);
+    // Event listeners
+    endElement.addEventListener('changeDate', handleDateChange);
 
-  // Initial data fetch
-  setTimeout(() => {
-    handleDateChange();
-  }, 2000);
+    // Initialize mobile menu
+    initializeMobileMenu();
+
+    // Initial data fetch
+    setTimeout(() => {
+      handleDateChange();
+    }, 2000);
+
+    return endPicker;
+  }
+
+  // Initialize when DOM is ready
+  const endPicker = initialize();
 </script>
 
 <style>
+  /* Datepicker styling */
   .datepicker {
     z-index: 60;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
 
+  /* Mobile responsive datepicker */
   @media (max-width: 640px) {
     .datepicker {
-      position: fixed;
+      position: fixed !important;
       top: 50% !important;
       left: 50% !important;
-      transform: translate(-50%, -50%);
-      margin: 0;
+      transform: translate(-50%, -50%) !important;
+      margin: 0 !important;
+      width: 90vw !important;
+      max-width: 320px !important;
+    }
+  }
+
+  /* Header responsive adjustments */
+  @media (max-width: 768px) {
+    header {
+      left: 0 !important;
+    }
+  }
+
+  /* Smooth transitions */
+  button {
+    transition: all 0.2s ease-in-out;
+  }
+
+  button:hover {
+    transform: translateY(-1px);
+  }
+
+  /* Focus states for accessibility */
+  button:focus,
+  input:focus {
+    outline: 2px solid #3B82F6;
+    outline-offset: 2px;
+  }
+
+  /* Mobile menu animation */
+  #mobile-menu-toggle svg {
+    transition: transform 0.2s ease-in-out;
+  }
+
+  #mobile-menu-toggle:hover svg {
+    transform: scale(1.1);
+  }
+
+  /* Notification badge animation */
+  .absolute.-top-1.-right-1 {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  /* User avatar hover effect */
+  img[alt="User Avatar"]:hover {
+    transform: scale(1.05);
+  }
+
+  /* Responsive text sizing */
+  @media (max-width: 480px) {
+    .text-sm {
+      font-size: 0.75rem;
     }
   }
 </style>
