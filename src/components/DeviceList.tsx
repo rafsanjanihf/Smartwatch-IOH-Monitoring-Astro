@@ -8,7 +8,7 @@ interface DeviceListProps {
   className?: string;
 }
 
-type FilterOption = 'all' | 'normal' | 'abnormal';
+type FilterOption = 'all' | 'normal' | 'abnormal' | 'nodata';
 
 export default function DeviceList({ devices, className }: DeviceListProps) {
   const [activeDeviceId, setActiveDeviceId] = useState<string | null>(devices[0]?.id || null);
@@ -19,6 +19,7 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
   const [filteredSleepCount, setFilteredSleepCount] = useState({
     normal: 0,
     abnormal: 0,
+    nodata: 0,
     total: 0,
   });
 
@@ -34,16 +35,27 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
         // Calculate counts for each category
         const counts = data.reduce(
           (acc, sleep) => {
-            if (sleep.sleepTotalTime <= 21600) {
-              acc.normal++;
+            if (sleep.sleepTotalTime > 0) {
+              if (sleep.sleepTotalTime >= 21600) {
+                acc.normal++;
+              } else {
+                acc.abnormal++;
+              }
             } else {
-              acc.abnormal++;
+              acc.nodata++;
             }
             acc.total++;
             return acc;
           },
-          { normal: 0, abnormal: 0, total: 0 },
+          { normal: 0, abnormal: 0, nodata: 0, total: 0 },
         );
+        
+        // Count devices that don't have sleep data at all
+        const devicesWithSleepData = new Set(data.map(sleep => sleep.device_id));
+        const devicesWithoutSleepData = devices.filter(device => !devicesWithSleepData.has(device.id));
+        counts.nodata += devicesWithoutSleepData.length;
+        counts.total += devicesWithoutSleepData.length;
+        
         setFilteredSleepCount(counts);
       } catch (error) {
         console.error('Error fetching sleep data:', error);
@@ -72,16 +84,27 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
         // Recalculate counts
         const counts = data.reduce(
           (acc, sleep) => {
-            if (sleep.sleepTotalTime >= 21600) {
-              acc.normal++;
+            if (sleep.sleepTotalTime > 0) {
+              if (sleep.sleepTotalTime >= 21600) {
+                acc.normal++;
+              } else {
+                acc.abnormal++;
+              }
             } else {
-              acc.abnormal++;
+              acc.nodata++;
             }
             acc.total++;
             return acc;
           },
-          { normal: 0, abnormal: 0, total: 0 },
+          { normal: 0, abnormal: 0, nodata: 0, total: 0 },
         );
+        
+        // Count devices that don't have sleep data at all
+        const devicesWithSleepData = new Set(data.map(sleep => sleep.device_id));
+        const devicesWithoutSleepData = devices.filter(device => !devicesWithSleepData.has(device.id));
+        counts.nodata += devicesWithoutSleepData.length;
+        counts.total += devicesWithoutSleepData.length;
+        
         setFilteredSleepCount(counts);
       } catch (error) {
         console.error('Error fetching sleep data:', error);
@@ -115,16 +138,21 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
       // Find sleep data for this device
       const deviceSleepData = sleepData.find((sleep) => sleep.device_id === device.id);
 
+      // No data filter: devices without sleep data or with sleepTotalTime = 0
+      if (filterOption === 'nodata') {
+        return !deviceSleepData || deviceSleepData.sleepTotalTime === 0;
+      }
+
       if (!deviceSleepData) return false;
 
-      // Normal sleep: sleepTotalTime <= 21600 (6 hours in seconds)
+      // Normal sleep: sleepTotalTime >= 21600 (6 hours in seconds)
       if (filterOption === 'normal') {
         return deviceSleepData.sleepTotalTime >= 21600;
       }
 
-      // Abnormal sleep: sleepTotalTime > 21600
+      // Abnormal sleep: sleepTotalTime < 21600 but > 0
       if (filterOption === 'abnormal') {
-        return deviceSleepData.sleepTotalTime < 21600;
+        return deviceSleepData.sleepTotalTime > 0 && deviceSleepData.sleepTotalTime < 21600;
       }
 
       return true;
@@ -198,6 +226,15 @@ export default function DeviceList({ devices, className }: DeviceListProps) {
               }`}
           >
             Abnormal Sleep ({filteredSleepCount.abnormal})
+          </button>
+          <button
+            onClick={() => setFilterOption('nodata')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors
+              ${
+                filterOption === 'nodata' ? 'bg-gray-300 text-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+          >
+            No Data Sleep ({filteredSleepCount.nodata})
           </button>
         </div>
       </div>
