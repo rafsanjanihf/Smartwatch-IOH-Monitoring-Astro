@@ -10,7 +10,8 @@ interface DeviceListProps {
 
 type FilterOption = 'all' | 'normal' | 'abnormal' | 'nodata';
 
-export default function DeviceList({ devices, className }: DeviceListProps) {
+export default function DeviceList({ devices: initialDevices, className }: DeviceListProps) {
+  const [devices, setDevices] = useState<Device[]>(initialDevices);
   const [activeDeviceId, setActiveDeviceId] = useState<string | null>(devices[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState<FilterOption>('all');
