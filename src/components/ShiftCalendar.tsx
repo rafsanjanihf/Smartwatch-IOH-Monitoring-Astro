@@ -140,8 +140,8 @@ const ShiftCalendar: React.FC<ShiftCalendarProps> = ({ devices }) => {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           {/* Date Navigation */}
           <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-semibold text-gray-800">📅 Calendar Shift</h2>
-            <div className="flex items-center space-x-2">
+            <h2 className="text-xl font-semibold text-gray-800 hidden sm:block">📅 Calendar Shift</h2>
+            <div className="flex items-center">
               <button
                 onClick={() => {
                   if (currentMonth === 1) {
@@ -158,7 +158,7 @@ const ShiftCalendar: React.FC<ShiftCalendarProps> = ({ devices }) => {
                 </svg>
               </button>
               
-              <div className="text-lg font-medium min-w-[200px] text-center">
+              <div className="text-lg font-medium min-w-[150px] text-center">
                 {monthNames[currentMonth - 1]} {currentYear}
               </div>
               
@@ -204,43 +204,42 @@ const ShiftCalendar: React.FC<ShiftCalendarProps> = ({ devices }) => {
       </div>
 
       {/* Device Selection */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">📱 Pilih Device untuk Ditampilkan</h3>
-          <div className="space-x-2">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
+          <h3 className="text-base sm:text-lg font-semibold">📱 Pilih Device untuk Ditampilkan</h3>
+          <div className="flex space-x-2">
             <button
               onClick={selectAllDevices}
-              className="text-sm text-blue-600 hover:text-blue-800"
+              className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
             >
               Pilih Semua
             </button>
             <button
               onClick={clearSelection}
-              className="text-sm text-gray-600 hover:text-gray-800"
+              className="text-xs sm:text-sm text-gray-600 hover:text-gray-800 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
             >
-              Bersihkan
+              Clear
             </button>
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        <div className="max-h-48 sm:max-h-64 overflow-y-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
           {devices.map((device) => (
-            <label key={device.id} className="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer border">
+            <label key={device.id} className="flex items-center p-2 sm:p-3 hover:bg-gray-50 rounded-lg cursor-pointer border">
               <input
                 type="checkbox"
                 checked={selectedDevices.includes(device.id)}
                 onChange={() => handleDeviceToggle(device.id)}
-                className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="mr-2 sm:mr-3 h-3 w-3 sm:h-4 sm:w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">{device.name}</div>
-                <div className="text-xs text-gray-500 truncate">{device.mac_address}</div>
+                <div className="font-medium text-xs sm:text-sm truncate">{device.name}</div>
               </div>
             </label>
           ))}
         </div>
         
-        <div className="mt-4 text-sm text-gray-600">
+        <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
           {selectedDevices.length} dari {devices.length} device dipilih
         </div>
       </div>
@@ -258,7 +257,7 @@ const ShiftCalendar: React.FC<ShiftCalendarProps> = ({ devices }) => {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-100">
-                  <th className="sticky left-0 bg-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 border-r min-w-[200px]">
+                  <th className="sm:sticky left-0 bg-gray-100 px-4 py-3 text-left text-sm font-medium text-gray-700 border-r min-w-[200px]">
                     NAMA
                   </th>
                   {calendarDays.map((day, index) => (
@@ -282,15 +281,14 @@ const ShiftCalendar: React.FC<ShiftCalendarProps> = ({ devices }) => {
                 </tr>
               </thead>
               <tbody>
-                {selectedDevices.map((deviceId) => {
+                {selectedDevices.map((deviceId, rowIndex) => {
                   const device = devices.find(d => d.id === deviceId);
                   if (!device) return null;
                   
                   return (
-                    <tr key={deviceId} className="border-b hover:bg-gray-50">
-                      <td className="sticky left-0 bg-white px-4 py-3 border-r">
+                    <tr key={deviceId} className={`border-b hover:bg-gray-50 ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-100'}`}>
+                      <td className={`sm:sticky left-0 px-4 py-3 border-r ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-100'}`}>
                         <div className="font-medium text-sm">{device.name}</div>
-                        <div className="text-xs text-gray-500">{device.mac_address}</div>
                       </td>
                       {calendarDays.map((day, index) => {
                         if (!day) {

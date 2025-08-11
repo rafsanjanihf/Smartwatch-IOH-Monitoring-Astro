@@ -533,12 +533,12 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
                   <span className='font-semibold'>
                     {data.value}
                     {data.unit && <span className='text-sm text-gray-500 ml-1'>{data.unit}</span>}
-                    {data.avg && (
+                    {/* {data.avg && (
                       <span className='text-sm text-gray-500 ml-2'>
                         (avg: {Math.round(data.avg)}
                         {data.unit})
                       </span>
-                    )}
+                    )} */}
                   </span>
                 </div>
               ))}

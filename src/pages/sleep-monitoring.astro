@@ -82,6 +82,10 @@ try {
       const formattedDate = typeof selectedDate === 'string' ? selectedDate : selectedDate.toISOString().split('T')[0];
       startDate = formattedDate;
       endDate = formattedDate;
+      
+      // Update StatisticsCards with selected date
+      document.dispatchEvent(new CustomEvent('date-change', { detail: formattedDate }));
+      
       if (selectedDeviceId) {
         fetchSleepData(selectedDeviceId, startDate, endDate);
       }
@@ -117,14 +121,15 @@ try {
         client:load
         deviceCount={devices.filter(device => device.status === 'published').length}
         sleepRecordsCount={sleepRecordsCount}
+        deviceIds={devices.map(d => d.id).join(',')}
         heartRateStats={{
           avgBpm: 80,
           maxBpm: 100,
           minBpm: 60
         }}
         sleepStats={{
-          avgDuration: 8,
-          maxDuration: 10,
+          avgDuration: 7,
+          maxDuration: 9,
           minDuration: 6
         }}
       />

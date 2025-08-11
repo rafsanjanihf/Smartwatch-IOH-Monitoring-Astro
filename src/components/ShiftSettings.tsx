@@ -406,197 +406,199 @@ const ShiftSettings: React.FC<ShiftSettingsProps> = ({ devices }) => {
         <div className="space-y-6">
           <h1 className="sm:text-lg font-bold mb-3 sm:mb-4">Shift Management</h1>
           {/* Bulk Assignment Form */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {/* Date Range Selection */}
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
-            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">📅 Pilih Rentang Tanggal</h3>
-            
-            {/* Quick Date Templates */}
-            <div className="mb-3 sm:mb-4">
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Template Cepat</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2">
-                {[
-                  { id: 'today', label: 'Hari Ini' },
-                  { id: 'tomorrow', label: 'Besok' },
-                  { id: 'this_week', label: 'Minggu Ini' },
-                  { id: 'next_week', label: 'Minggu Depan' },
-                  { id: 'this_month', label: 'Bulan Ini' },
-                  { id: 'next_month', label: 'Bulan Depan' }
-                ].map((template) => (
-                  <button
-                    key={template.id}
-                    onClick={() => applyQuickDateTemplate(template.id)}
-                    className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs rounded-md border transition-colors ${
-                      quickDateTemplate === template.id
-                        ? 'bg-blue-50 border-blue-300 text-blue-700'
-                        : 'bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100'
-                    }`}
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
+              <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">📅 Pilih Rentang Tanggal</h3>
+              
+              {/* Quick Date Templates */}
+              <div className="mb-3 sm:mb-4">
+                {/* <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Template Cepat</label> */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2">
+                  {[
+                    { id: 'today', label: 'Hari Ini' },
+                    { id: 'tomorrow', label: 'Besok' },
+                    { id: 'this_week', label: 'Minggu Ini' },
+                    { id: 'next_week', label: 'Minggu Depan' },
+                    { id: 'this_month', label: 'Bulan Ini' },
+                    { id: 'next_month', label: 'Bulan Depan' }
+                  ].map((template) => (
+                    <button
+                      key={template.id}
+                      onClick={() => applyQuickDateTemplate(template.id)}
+                      className={`px-2 sm:px-3 py-1.5 sm:py-2 text-xs rounded-md border transition-colors ${
+                        quickDateTemplate === template.id
+                          ? 'bg-blue-50 border-blue-300 text-blue-700'
+                          : 'bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      {template.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Date Range - 2 Columns */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Tanggal Mulai</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
+                        </svg>
+                      </div>
+                      <input
+                        id="datepicker-start-date"
+                        type="text"
+                        value={dateRange.startDate}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-xs sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-8 sm:pl-10 pr-3 py-2 sm:py-2.5"
+                        placeholder="Pilih tanggal mulai"
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Sampai dengan</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
+                        </svg>
+                      </div>
+                      <input
+                        id="datepicker-end-date"
+                        type="text"
+                        value={dateRange.endDate}
+                        className="bg-gray-50 border border-gray-300 text-gray-900 text-xs sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-8 sm:pl-10 pr-3 py-2 sm:py-2.5"
+                        placeholder="Pilih tanggal akhir"
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Shift Type */}
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Tipe Shift</label>
+                  <select
+                    value={bulkShiftType}
+                    onChange={(e) => setBulkShiftType(e.target.value as any)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
                   >
-                    {template.label}
-                  </button>
-                ))}
+                    <option value="fullday">🔵 Fullday</option>
+                    <option value="day">🟡 Pagi</option>
+                    <option value="night">🟣 Malam</option>
+                    <option value="off">🔴 OFF</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-4">
-              {/* Date Range - 2 Columns */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Tanggal Mulai</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
-                      </svg>
-                    </div>
-                    <input
-                      id="datepicker-start-date"
-                      type="text"
-                      value={dateRange.startDate}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-xs sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-8 sm:pl-10 pr-3 py-2 sm:py-2.5"
-                      placeholder="Pilih tanggal mulai"
-                      readOnly
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Sampai dengan</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
-                      </svg>
-                    </div>
-                    <input
-                      id="datepicker-end-date"
-                      type="text"
-                      value={dateRange.endDate}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-xs sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-8 sm:pl-10 pr-3 py-2 sm:py-2.5"
-                      placeholder="Pilih tanggal akhir"
-                      readOnly
-                    />
-                  </div>
+            {/* Device Selection */}
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
+                <h3 className="text-base sm:text-lg font-semibold">📱 Pilih Device</h3>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={selectAllDevices}
+                    className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
+                  >
+                    Pilih Semua
+                  </button>
+                  <button
+                    onClick={clearSelection}
+                    className="text-xs sm:text-sm text-gray-600 hover:text-gray-800 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
+                  >
+                    Reset
+                  </button>
                 </div>
               </div>
               
-              {/* Shift Type */}
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">Tipe Shift</label>
-                <select
-                  value={bulkShiftType}
-                  onChange={(e) => setBulkShiftType(e.target.value as any)}
+              {/* Search Device */}
+              <div className="mb-3 sm:mb-4">
+                <input
+                  type="text"
+                  placeholder="Cari device berdasarkan nama..."
+                  value={deviceSearchTerm}
+                  onChange={(e) => setDeviceSearchTerm(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
-                >
-                  <option value="fullday">🔵 Fullday</option>
-                  <option value="day">🟡 Pagi</option>
-                  <option value="night">🟣 Malam</option>
-                  <option value="off">🔴 OFF</option>
-                </select>
+                />
               </div>
-            </div>
-          </div>
 
-          {/* Device Selection */}
-          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
-              <h3 className="text-base sm:text-lg font-semibold">📱 Pilih Device</h3>
-              <div className="flex space-x-2">
-                <button
-                  onClick={selectAllDevices}
-                  className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50"
-                >
-                  Pilih Semua
-                </button>
-                <button
-                  onClick={clearSelection}
-                  className="text-xs sm:text-sm text-gray-600 hover:text-gray-800 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50"
-                >
-                  Bersihkan
-                </button>
-              </div>
-            </div>
-            
-            {/* Search Device */}
-            <div className="mb-3 sm:mb-4">
-              <input
-                type="text"
-                placeholder="Cari device berdasarkan nama..."
-                value={deviceSearchTerm}
-                onChange={(e) => setDeviceSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
-              />
-            </div>
-
-            {/* Selected Devices Summary */}
-            {selectedDevices.length > 0 && (
-              <div className="mb-3 sm:mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="text-xs sm:text-sm text-blue-800 font-medium mb-2">
-                  {selectedDevices.length} device terpilih:
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {selectedDevices.slice(0, 3).map(deviceId => {
-                    const device = devices.find(d => d.id === deviceId);
-                    return device ? (
-                      <span key={deviceId} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                        <span className="truncate max-w-20 sm:max-w-none">{device.name}</span>
-                        <button
-                          onClick={() => handleDeviceSelection(deviceId)}
-                          className="ml-1 text-blue-600 hover:text-blue-800 flex-shrink-0"
-                        >
-                          ×
-                        </button>
+              {/* Selected Devices Summary */}
+              {selectedDevices.length > 0 && (
+                <div className="mb-3 sm:mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="text-xs sm:text-sm text-blue-800 font-medium mb-2">
+                    {selectedDevices.length} device terpilih:
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedDevices.slice(0, 3).map(deviceId => {
+                      const device = devices.find(d => d.id === deviceId);
+                      return device ? (
+                        <span key={deviceId} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                          <span className="truncate max-w-20 sm:max-w-none">{device.name}</span>
+                          <button
+                            onClick={() => handleDeviceSelection(deviceId)}
+                            className="ml-1 text-blue-600 hover:text-blue-800 flex-shrink-0"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ) : null;
+                    })}
+                    {selectedDevices.length > 3 && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
+                        +{selectedDevices.length - 3} lainnya
                       </span>
-                    ) : null;
-                  })}
-                  {selectedDevices.length > 3 && (
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-600">
-                      +{selectedDevices.length - 3} lainnya
-                    </span>
-                  )}
+                    )}
+                  </div>
                 </div>
+              )}
+              
+              <div className="max-h-48 sm:max-h-64 overflow-y-auto space-y-1 sm:space-y-2">
+                {filteredDevices.map((device) => (
+                  <label key={device.id} className="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedDevices.includes(device.id)}
+                      onChange={() => handleDeviceSelection(device.id)}
+                      className="mr-2 sm:mr-3 h-3 w-3 sm:h-4 sm:w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded flex-shrink-0"
+                    />
+                    <div className="font-medium text-xs sm:text-sm truncate">{device.name || 'Unknown Device'}</div>
+                  </label>
+                ))}
               </div>
-            )}
-            
-            <div className="max-h-48 sm:max-h-64 overflow-y-auto space-y-1 sm:space-y-2">
-              {filteredDevices.map((device) => (
-                <label key={device.id} className="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedDevices.includes(device.id)}
-                    onChange={() => handleDeviceSelection(device.id)}
-                    className="mr-2 sm:mr-3 h-3 w-3 sm:h-4 sm:w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded flex-shrink-0"
-                  />
-                  <div className="font-medium text-xs sm:text-sm truncate">{device.name || 'Unknown Device'}</div>
-                </label>
-              ))}
-            </div>
-            
-            {filteredDevices.length === 0 && deviceSearchTerm && (
-              <div className="text-center py-4 text-gray-500 text-sm">
-                Tidak ada device yang ditemukan untuk "{deviceSearchTerm}"
+              
+              {filteredDevices.length === 0 && deviceSearchTerm && (
+                <div className="text-center py-4 text-gray-500 text-sm">
+                  Tidak ada device yang ditemukan untuk "{deviceSearchTerm}"
+                </div>
+              )}
+              
+              <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
+                {selectedDevices.length} dari {devices.length} device dipilih
               </div>
-            )}
-            
-            <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
-              {selectedDevices.length} dari {devices.length} device dipilih
             </div>
-          </div>
 
-          {/* Preview Summary */}
-          {dateRange.startDate && dateRange.endDate && selectedDevices.length > 0 && (
-            <div className="lg:col-span-2 bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
-              <h4 className="font-medium text-blue-800 mb-2 text-sm sm:text-base">📋 Preview Perubahan</h4>
-              <div className="text-xs sm:text-sm text-blue-700 space-y-1">
-                <p><strong>Periode:</strong> {dateRange.startDate} sampai {dateRange.endDate} ({generateDateRange(dateRange.startDate, dateRange.endDate).length} hari)</p>
-                <p><strong>User:</strong> {selectedDevices.length} user terpilih</p>
-                <p><strong>Shift diterapkan:</strong> {bulkShiftType === 'fullday' ? '🔵 Fullday' : bulkShiftType === 'day' ? '🟡 Pagi' : bulkShiftType === 'night' ? '🟣 Malam' : '🔴 OFF'}</p>
-                <p><strong>Total Assignment:</strong> {selectedDevices.length * generateDateRange(dateRange.startDate, dateRange.endDate).length} schedule entries</p>
-              </div>
+            {/* Preview Summary */}
+            <div className="lg:col-span-2 xl:col-span-1">
+              {dateRange.startDate && dateRange.endDate && selectedDevices.length > 0 && (
+                <div className="lg:col-span-2 bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
+                  <h4 className="font-medium text-blue-800 mb-2 text-sm sm:text-base">📋 Preview Perubahan</h4>
+                  <div className="text-xs sm:text-sm text-blue-700 space-y-1">
+                    <p><strong>Periode:</strong> {dateRange.startDate} sampai {dateRange.endDate} ({generateDateRange(dateRange.startDate, dateRange.endDate).length} hari)</p>
+                    <p><strong>User:</strong> {selectedDevices.length} user terpilih</p>
+                    <p><strong>Shift diterapkan:</strong> {bulkShiftType === 'fullday' ? '🔵 Fullday' : bulkShiftType === 'day' ? '🟡 Pagi' : bulkShiftType === 'night' ? '🟣 Malam' : '🔴 OFF'}</p>
+                    <p><strong>Total Assignment:</strong> {selectedDevices.length * generateDateRange(dateRange.startDate, dateRange.endDate).length} schedule entries</p>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
 
             {/* Apply Button */}
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-3">
               <button
                 onClick={handleBulkAssignment}
                 disabled={isLoading || !dateRange.startDate || !dateRange.endDate || selectedDevices.length === 0}
@@ -613,8 +615,7 @@ const ShiftSettings: React.FC<ShiftSettingsProps> = ({ devices }) => {
                   </>
                 ) : (
                   <>
-                    <span className="hidden sm:inline">🚀 Terapkan Shift ke Device Terpilih</span>
-                    <span className="sm:hidden">🚀 Terapkan Shift</span>
+                    <span>🚀 Terapkan Shift</span>
                   </>
                 )}
               </button>
@@ -627,7 +628,7 @@ const ShiftSettings: React.FC<ShiftSettingsProps> = ({ devices }) => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 sm:mb-4 gap-2">
               <h3 className="text-base sm:text-lg font-semibold">📅 Calendar View</h3>
               <div className="text-xs sm:text-sm text-gray-600">
-                Visualisasi shift schedule untuk semua device
+                Visualisasi schedule shift untuk semua device
               </div>
             </div>
             <div className="overflow-x-auto">
