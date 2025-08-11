@@ -11,7 +11,7 @@ export default function DeviceTable({ devices: initialDevices, id }: DeviceTable
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  // Memoized filtered devices
+  // Memoized filtered and sorted devices
   const filteredDevices = useMemo(() => {
     let result = [...devices];
 
@@ -19,13 +19,43 @@ export default function DeviceTable({ devices: initialDevices, id }: DeviceTable
       const term = searchTerm.toLowerCase().trim();
       result = result.filter(
         (device) =>
-          (device.name?.toLowerCase() || '').includes(term) || (device.email_pic?.toLowerCase() || '').includes(term),
+          (device.name?.toLowerCase() || '').includes(term) || 
+          (device.email_pic?.toLowerCase() || '').includes(term) ||
+          (device.idEmployee?.toLowerCase() || '').includes(term),
       );
     }
 
     if (statusFilter) {
       result = result.filter((device) => device.status === statusFilter);
     }
+
+    // Sort devices: 
+    // 1. Devices with idEmployee sorted by idEmployee (ascending)
+    // 2. Devices without idEmployee sorted by name (alphabetical)
+    result.sort((a, b) => {
+      const hasIdA = a.idEmployee && a.idEmployee.trim() !== '';
+      const hasIdB = b.idEmployee && b.idEmployee.trim() !== '';
+
+      // If both have idEmployee, sort by idEmployee
+      if (hasIdA && hasIdB) {
+        return a.idEmployee!.localeCompare(b.idEmployee!);
+      }
+
+      // If only A has idEmployee, A comes first
+      if (hasIdA && !hasIdB) {
+        return -1;
+      }
+
+      // If only B has idEmployee, B comes first
+      if (!hasIdA && hasIdB) {
+        return 1;
+      }
+
+      // If neither has idEmployee, sort by name alphabetically
+      const nameA = (a.name || 'Unnamed Device').toLowerCase();
+      const nameB = (b.name || 'Unnamed Device').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
 
     return result;
   }, [devices, searchTerm, statusFilter]);
@@ -111,15 +141,21 @@ export default function DeviceTable({ devices: initialDevices, id }: DeviceTable
                 <tr>
                   <th
                     scope='col'
+                    className='hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+                  >
+                    ID Employee / NRP
+                  </th>
+                  <th
+                    scope='col'
                     className='px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
                   >
                     Name
                   </th>
                   <th
                     scope='col'
-                    className='hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
+                    className='hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'
                   >
-                    Type
+                    MAC
                   </th>
                   <th
                     scope='col'
@@ -144,6 +180,11 @@ export default function DeviceTable({ devices: initialDevices, id }: DeviceTable
               <tbody className='bg-white divide-y divide-gray-200'>
                 {filteredDevices.map((device) => (
                   <tr key={device.id} className='hover:bg-gray-50'>
+                    <td className='hidden sm:table-cell px-6 py-4 whitespace-nowrap'>
+                      <div className='text-sm text-gray-900 truncate max-w-[150px]' title={device.idEmployee || 'ID Not Set'}>
+                        {device.idEmployee || 'ID Not Set'}
+                      </div>
+                    </td>
                     <td className='px-3 sm:px-6 py-4 whitespace-nowrap'>
                       <div className='flex items-center'>
                         <div className='w-8 sm:w-10 h-8 sm:h-10 bg-gray-200 rounded-full flex items-center justify-center'>
@@ -156,9 +197,9 @@ export default function DeviceTable({ devices: initialDevices, id }: DeviceTable
                         </div>
                       </div>
                     </td>
-                    <td className='hidden sm:table-cell px-6 py-4 whitespace-nowrap'>
-                      <div className='text-sm text-gray-900 truncate max-w-[150px]' title={device.type}>
-                        {device.type}
+                    <td className='hidden lg:table-cell px-6 py-4 whitespace-nowrap'>
+                      <div className='text-sm text-gray-900 truncate max-w-[150px]' title={device.mac}>
+                        {device.mac}
                       </div>
                     </td>
                     <td className='px-3 sm:px-6 py-4 whitespace-nowrap'>

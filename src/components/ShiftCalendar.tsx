@@ -92,7 +92,7 @@ const ShiftCalendar: React.FC<ShiftCalendarProps> = ({ devices }) => {
     
     switch (shiftType) {
       case 'fullday':
-        return { text: 'D', color: 'bg-blue-500 text-white' };
+        return { text: 'FD', color: 'bg-blue-500 text-white' };
       case 'day':
         return { text: 'D', color: 'bg-yellow-500 text-white' };
       case 'night':
@@ -341,7 +341,7 @@ const ShiftCalendar: React.FC<ShiftCalendarProps> = ({ devices }) => {
         <h4 className="font-medium text-gray-800 mb-3">Keterangan:</h4>
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center space-x-2">
-            <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-blue-500 text-white">D</span>
+            <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-blue-500 text-white">FD</span>
             <span className="text-sm text-gray-600">Fullday</span>
           </div>
           <div className="flex items-center space-x-2">

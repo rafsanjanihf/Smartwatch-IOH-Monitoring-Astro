@@ -1,7 +1,7 @@
 export interface Device {
   id: string;
   name?: string;
-  type: string;
+  // type: string;
   status: string;
   email_pic?: string;
   mac?: string;
@@ -11,6 +11,7 @@ export interface Device {
   cookies_exp?: string;
   date_created?: string;
   date_updated?: string;
+  idEmployee?: string;
 }
 
 export interface Health {

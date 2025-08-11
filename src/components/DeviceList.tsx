@@ -11,9 +11,23 @@ interface DeviceListProps {
 type FilterOption = 'all' | 'normal' | 'abnormal' | 'nodata';
 
 export default function DeviceList({ devices: initialDevices, className }: DeviceListProps) {
-  // Sort devices alphabetically by name first
+  // Sort devices by idEmployee first, then by name
   const sortedDevices = useMemo(() => {
     return [...initialDevices].sort((a, b) => {
+      // If both have idEmployee, sort by idEmployee
+      if (a.idEmployee && b.idEmployee) {
+        return a.idEmployee.localeCompare(b.idEmployee);
+      }
+      
+      // If only one has idEmployee, prioritize the one with idEmployee
+      if (a.idEmployee && !b.idEmployee) {
+        return -1;
+      }
+      if (!a.idEmployee && b.idEmployee) {
+        return 1;
+      }
+      
+      // If neither has idEmployee, sort by name
       const nameA = (a.name || 'Unnamed Device').toLowerCase();
       const nameB = (b.name || 'Unnamed Device').toLowerCase();
       return nameA.localeCompare(nameB);
@@ -201,7 +215,8 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       // First apply search filter
       const matchesSearch =
         device.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        device.id.toLowerCase().includes(searchQuery.toLowerCase());
+        device.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        device.idEmployee?.toLowerCase().includes(searchQuery.toLowerCase());
 
       if (!matchesSearch) return false;
 
@@ -231,8 +246,22 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       return true;
     });
 
-    // Sort devices alphabetically by name
+    // Sort devices by idEmployee first, then by name
     return filtered.sort((a, b) => {
+      // If both have idEmployee, sort by idEmployee
+      if (a.idEmployee && b.idEmployee) {
+        return a.idEmployee.localeCompare(b.idEmployee);
+      }
+      
+      // If only one has idEmployee, prioritize the one with idEmployee
+      if (a.idEmployee && !b.idEmployee) {
+        return -1;
+      }
+      if (!a.idEmployee && b.idEmployee) {
+        return 1;
+      }
+      
+      // If neither has idEmployee, sort by name
       const nameA = (a.name || 'Unnamed Device').toLowerCase();
       const nameB = (b.name || 'Unnamed Device').toLowerCase();
       return nameA.localeCompare(nameB);
@@ -378,7 +407,9 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
                       <h4 className='text-sm lg:text-base font-medium'>{device.name || 'Unnamed Device'}</h4>
                       {renderScheduleBadge(deviceSchedule?.schedule_type)}
                     </div>
-                    <p className='text-xs lg:text-sm text-gray-600'>Operator {index + 1}</p>
+                    <p className='text-xs lg:text-sm text-gray-600'>
+                      {device.idEmployee ? `${device.idEmployee} - Operator ${index + 1}` : `Operator ${index + 1}`}
+                    </p>
                     {deviceSleepData && deviceSleepData.sleepTotalTime > 0 && (
                       <p className='text-xs text-gray-500 mt-1'>
                         Sleep Time:{' '}
