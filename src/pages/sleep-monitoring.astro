@@ -9,7 +9,6 @@ import SleepChart from '../components/SleepChart';
 import SleepAnalytics from '../components/SleepAnalytics';
 import { api } from '../utils/api';
 import type { Device, Health, SleepData } from '../types';
-import { useState } from 'react';
 import StatisticsCards from '../components/StatisticsCards';
 
 // Fetch data devices
@@ -63,47 +62,47 @@ try {
 
 <script define:vars={{ devices }}>
   // Initialize state
-  let selectedDeviceId: string | null = null;
-  let startDate: string | null = null;
-  let endDate: string | null = null;
+  let selectedDeviceId = null;
+  let startDate = null;
+  let endDate = null;
 
   // Initialize with first device if available
   if (devices.length > 0) {
     selectedDeviceId = devices[0].id;
   }
 
-  endDate = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
+  endDate = document.getElementById('datepicker-range-end')?.value;
   startDate = endDate;
   // Add event listener for device selection and date range
   document.addEventListener('DOMContentLoaded', () => {
     // Device selection handler
-    document.addEventListener('device-select', ((e: CustomEvent) => {
+    document.addEventListener('device-select', (e) => {
       selectedDeviceId = e.detail.deviceId;
       if (startDate && endDate) {
         fetchSleepData(selectedDeviceId, startDate, endDate);
       }
-    }) as EventListener);
+    });
 
     // Date range handler
-    document.addEventListener('datepicker-range-start', ((e: CustomEvent) => {
+    document.addEventListener('datepicker-range-start', (e) => {
       startDate = e.detail.start;
       endDate = e.detail.end;
       if (selectedDeviceId) {
         fetchSleepData(selectedDeviceId, startDate, endDate);
       }
-    }) as EventListener);
+    });
 
 
   });
 
-  async function fetchSleepData(deviceId: string | null = null, start: string | null = null, end: string | null = null) {
+  async function fetchSleepData(deviceId = null, start = null, end = null) {
     if (!deviceId) {
       console.warn('No device selected, skipping fetchSleepData');
       return; // Exit the function if deviceId is null or empty
     }
 
     try {
-      const data = await (window as any).api.getDeviceSleepData(deviceId, start, end);
+      const data = await window.api.getDeviceSleepData(deviceId, start, end);
       document.dispatchEvent(new CustomEvent('sleep-data-update', { detail: data }));
     } catch (error) {
       console.error('Error fetching sleep data:', error);

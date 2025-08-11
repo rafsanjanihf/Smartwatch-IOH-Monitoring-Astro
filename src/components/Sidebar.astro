@@ -1,19 +1,29 @@
 ---
 const menuItems = [
-  { icon: "dashboard", label: "Dashboard", path: "/", active: false },
-  { icon: "sleep", label: "Sleep Monitoring", path: "/sleep-monitoring", active: false },
-  { icon: "vital", label: "Vital Signs", path: "/vital-signs", active: true },
-  // { icon: "company", label: "Company Management", path: "/company", active: false },
-  // { icon: "user", label: "User Management", path: "/users", active: false },
-  // { icon: "groups", label: "Groups", path: "/groups", active: false },
-  { icon: "device", label: "Device Management", path: "/devices", active: false },
-  { icon: "settings", label: "Shift Settings", path: "/shift-settings", active: false },
-  // { icon: "settings", label: "Account Setting", path: "/settings", active: false },
+  { icon: "dashboard", label: "Dashboard", path: "/" },
+  { icon: "sleep", label: "Sleep Monitoring", path: "/sleep-monitoring" },
+  { icon: "vital", label: "Vital Signs", path: "/vital-signs" },
+  // { icon: "company", label: "Company Management", path: "/company" },
+  // { icon: "user", label: "User Management", path: "/users" },
+  // { icon: "groups", label: "Groups", path: "/groups" },
+  { icon: "device", label: "Device Management", path: "/devices/" },
+  { icon: "settings", label: "Shift Settings", path: "/shift-settings" },
+  // { icon: "settings", label: "Account Setting", path: "/settings" },
 ];
 import iohLgLogo from '/assets/images/ioh-lg-logo.png';
 
 // Dapatkan path halaman saat ini
 const currentPath = Astro.url.pathname;
+
+// Helper function untuk menentukan apakah menu item aktif
+const isActiveMenuItem = (itemPath, currentPath) => {
+  // Untuk homepage, hanya cocok jika path persis sama
+  if (itemPath === '/') {
+    return currentPath === '/';
+  }
+  // Untuk path lainnya, cocok jika currentPath dimulai dengan itemPath
+  return currentPath === itemPath || currentPath.startsWith(itemPath);
+};
 ---
 
 <aside class="w-64 h-screen bg-white fixed left-0 top-0 border-r border-gray-200 z-20 md:block hidden">
@@ -28,10 +38,10 @@ const currentPath = Astro.url.pathname;
           <li>
             <a
               href={item.path}
-              class={`flex items-center p-3 rounded-lg ${
-                currentPath === item.path
-                  ? "bg-blue-50 text-blue-600"
-                  : "text-gray-600 hover:bg-gray-50"
+              class={`flex items-center p-3 rounded-lg transition-colors ${
+                isActiveMenuItem(item.path, currentPath)
+                  ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >
               <span class="mr-3">

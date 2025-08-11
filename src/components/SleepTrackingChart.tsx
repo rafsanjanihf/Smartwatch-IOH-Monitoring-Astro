@@ -61,6 +61,22 @@ export default function SleepTrackingChart({
       }
     };
 
+    const handleDatePickerChange = async (e: CustomEvent) => {
+      try {
+        const selectedDate = e.detail;
+        const formattedDate = moment(selectedDate).format('YYYY-MM-DD');
+        const data = await api.getDeviceSleepData(
+          initialSelectedDeviceId, 
+          moment(formattedDate).toISOString(), 
+          moment(formattedDate).toISOString()
+        );
+        setSleepData(data);
+      } catch (error) {
+        console.error('Error fetching sleep data:', error);
+        setSleepData(null);
+      }
+    };
+
     const handleSleepDataUpdate = (e: CustomEvent) => {
       setSleepData(e.detail);
     };
@@ -68,12 +84,14 @@ export default function SleepTrackingChart({
     // Menambahkan event listeners
     document.addEventListener('daterange-change', handleDateRangeChange as EventListener);
     document.addEventListener('device-select', handleDeviceSelect as EventListener);
+    document.addEventListener('datepicker-range-end', handleDatePickerChange as EventListener);
     document.addEventListener('sleep-data-update', handleSleepDataUpdate as EventListener);
 
     // Membersihkan event listeners
     return () => {
       document.removeEventListener('daterange-change', handleDateRangeChange as EventListener);
       document.removeEventListener('device-select', handleDeviceSelect as EventListener);
+      document.removeEventListener('datepicker-range-end', handleDatePickerChange as EventListener);
       document.removeEventListener('sleep-data-update', handleSleepDataUpdate as EventListener);
     };
   }, [initialSelectedDeviceId]);

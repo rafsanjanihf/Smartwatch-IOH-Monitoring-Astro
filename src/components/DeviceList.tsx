@@ -26,7 +26,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
   const [filterOption, setFilterOption] = useState<FilterOption>('all');
   const [sleepData, setSleepData] = useState<SleepData[]>([]);
   const [scheduleData, setScheduleData] = useState<UserShift[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>('2025-08-09');
+  const [selectedDate, setSelectedDate] = useState<string>(moment().format('YYYY-MM-DD'));
 
   const [isLoading, setIsLoading] = useState(false);
   const [filteredSleepCount, setFilteredSleepCount] = useState({
@@ -61,11 +61,15 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
 
   // Fetch sleep data when component mounts
   useEffect(() => {
-    const fetchSleepData = async () => {
+    const fetchSleepData = async (dateToUse?: string) => {
       try {
         setIsLoading(true);
         const deviceIds = devices.map((d) => d.id).join(',');
-        const data = await api.getAllSleepData(deviceIds);
+        
+        // Use the provided date or current selectedDate
+        let targetDate = dateToUse || selectedDate;
+        
+        const data = await api.getAllSleepData(deviceIds, targetDate);
         setSleepData(data);
 
         // Calculate counts for each category
@@ -100,8 +104,13 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       }
     };
 
-    fetchSleepData();
-    fetchScheduleData(selectedDate);
+    // Delay to ensure DatePickerCard is initialized
+    const timer = setTimeout(() => {
+      fetchSleepData();
+      fetchScheduleData(selectedDate);
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [devices, selectedDate]);
 
   // Auto-select first device on initial load (alphabetically first)
@@ -126,8 +135,16 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         const deviceIds = devices.map((d) => d.id).join(',');
         const selectedDateFromEvent = e.detail;
 
-        // Format date for API call
-        const formattedDate = moment(selectedDateFromEvent).format('YYYY-MM-DD');
+        // Handle Date object from DatePickerCard
+        let formattedDate: string;
+        if (selectedDateFromEvent instanceof Date) {
+          formattedDate = moment(selectedDateFromEvent).format('YYYY-MM-DD');
+        } else if (typeof selectedDateFromEvent === 'string') {
+          formattedDate = moment(selectedDateFromEvent).format('YYYY-MM-DD');
+        } else {
+          formattedDate = moment().format('YYYY-MM-DD');
+        }
+        
         setSelectedDate(formattedDate);
 
         // Fetch both sleep data and schedule data

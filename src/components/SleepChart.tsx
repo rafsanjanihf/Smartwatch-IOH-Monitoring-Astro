@@ -121,18 +121,28 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
       if (deviceId) fetchSleepData(deviceId, start, end);
     };
 
+    const handleDatePickerChange = (e: CustomEvent) => {
+      const selectedDate = e.detail;
+      const formattedDate = moment(selectedDate).format('YYYY-MM-DD');
+      if (selectedDeviceId) {
+        fetchSleepData(selectedDeviceId, formattedDate, formattedDate);
+      }
+    };
+
     document.addEventListener('device-select', handleDeviceSelect as EventListener);
     document.addEventListener('daterange-change', handleDateRangeChange as EventListener);
+    document.addEventListener('datepicker-range-end', handleDatePickerChange as EventListener);
     document.addEventListener('sleep-data-update', ((e: CustomEvent<SleepData[]>) =>
       setCurrentData(e.detail)) as EventListener);
 
     return () => {
       document.removeEventListener('device-select', handleDeviceSelect as EventListener);
       document.removeEventListener('daterange-change', handleDateRangeChange as EventListener);
+      document.removeEventListener('datepicker-range-end', handleDatePickerChange as EventListener);
       document.removeEventListener('sleep-data-update', ((e: CustomEvent<SleepData[]>) =>
         setCurrentData(e.detail)) as EventListener);
     };
-  }, []);
+  }, [selectedDeviceId]);
 
   useEffect(() => {
     if (!chartRef.current) return;
