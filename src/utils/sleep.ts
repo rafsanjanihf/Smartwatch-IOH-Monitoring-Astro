@@ -19,10 +19,11 @@ export const SLEEP_STAGES = {
 
 export async function fetchSleepData(deviceId: string, startDate?: string, endDate?: string) {
   try {
+    // Fix timezone issue: use date string directly without UTC conversion
     return await api.getDeviceSleepData(
       deviceId,
-      startDate ? moment(startDate).toISOString() : undefined,
-      endDate ? moment(endDate).toISOString() : undefined,
+      startDate,
+      endDate,
     );
   } catch (error) {
     console.error('Error fetching sleep data:', error);
@@ -124,11 +125,11 @@ export async function fetchAndUpdateSleepData(dateRange: DateRange): Promise<voi
   try {
     setLoadingState(true);
 
-    // Use the existing API function instead of manual fetch
+    // Fix timezone issue: use date string directly without UTC conversion
     const sleepData = await api.getDeviceSleepData(
       deviceId,
-      moment(dateRange.start).toISOString(),
-      moment(dateRange.end).toISOString()
+      dateRange.start,
+      dateRange.end
     );
 
     emitEvent('sleep-data-update', sleepData);

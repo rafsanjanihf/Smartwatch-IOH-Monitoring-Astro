@@ -78,7 +78,8 @@ try {
     // Date range handler
     document.addEventListener('datepicker-range-end', ((e: CustomEvent) => {
       const selectedDate = e.detail;
-      const formattedDate = selectedDate.toISOString().split('T')[0];
+      // selectedDate is now already a formatted date string (YYYY-MM-DD) from DatePickerCard
+      const formattedDate = typeof selectedDate === 'string' ? selectedDate : selectedDate.toISOString().split('T')[0];
       startDate = formattedDate;
       endDate = formattedDate;
       if (selectedDeviceId) {
@@ -94,9 +95,9 @@ try {
     }
 
     try {
-      // Use the existing API function instead of manual fetch
-      const startDate = start ? new Date(start).toISOString() : new Date().toISOString();
-      const endDate = end ? new Date(end).toISOString() : new Date().toISOString();
+      // Fix timezone issue: use date string directly without UTC conversion
+      const startDate = start || moment().format('YYYY-MM-DD');
+      const endDate = end || moment().format('YYYY-MM-DD');
       
       const data = await api.getDeviceSleepData(deviceId, startDate, endDate);
       document.dispatchEvent(new CustomEvent('sleep-data-update', { detail: data }));

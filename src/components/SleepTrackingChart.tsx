@@ -53,7 +53,8 @@ export default function SleepTrackingChart({
         const end = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
         const start = moment(end).format('YYYY-MM-DD');
 
-        const data = await api.getDeviceSleepData(deviceId, moment(start).toISOString(), moment(end).toISOString());
+        // Fix timezone issue: use date string directly without UTC conversion
+        const data = await api.getDeviceSleepData(deviceId, start, end);
         setSleepData(data);
       } catch (error) {
         console.error('Error fetching sleep data:', error);
@@ -64,11 +65,14 @@ export default function SleepTrackingChart({
     const handleDatePickerChange = async (e: CustomEvent) => {
       try {
         const selectedDate = e.detail;
-        const formattedDate = moment(selectedDate).format('YYYY-MM-DD');
+        // selectedDate is now already a formatted date string from DatePickerCard
+        const formattedDate = typeof selectedDate === 'string' ? selectedDate : moment(selectedDate).format('YYYY-MM-DD');
+        
+        // Fix timezone issue: use date string directly without UTC conversion
         const data = await api.getDeviceSleepData(
           initialSelectedDeviceId, 
-          moment(formattedDate).toISOString(), 
-          moment(formattedDate).toISOString()
+          formattedDate, 
+          formattedDate
         );
         setSleepData(data);
       } catch (error) {

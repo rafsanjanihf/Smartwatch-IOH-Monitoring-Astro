@@ -90,10 +90,11 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
   const fetchSleepData = async (deviceId: string, start?: string, end?: string) => {
     try {
       console.log('fetching sleep data', deviceId, start, end);
+      // Fix timezone issue: use date string directly without UTC conversion
       const data = await api.getDeviceSleepData(
         deviceId,
-        start ? moment(start).toISOString() : undefined,
-        end ? moment(end).toISOString() : undefined,
+        start,
+        end,
       );
       if (data[0].sleepMotion.length > 0) {
         setCurrentData(data);
@@ -123,7 +124,8 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
 
     const handleDatePickerChange = (e: CustomEvent) => {
       const selectedDate = e.detail;
-      const formattedDate = moment(selectedDate).format('YYYY-MM-DD');
+      // selectedDate is now already a formatted date string from DatePickerCard
+      const formattedDate = typeof selectedDate === 'string' ? selectedDate : moment(selectedDate).format('YYYY-MM-DD');
       if (selectedDeviceId) {
         fetchSleepData(selectedDeviceId, formattedDate, formattedDate);
       }

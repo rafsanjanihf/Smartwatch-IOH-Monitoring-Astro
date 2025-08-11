@@ -100,15 +100,19 @@
     const selectedDate = endPicker.getDate();
     if (!selectedDate) return;
 
-    const formattedDate = moment(selectedDate).format(DATE_FORMAT);
+    // Fix timezone issue: use local date without UTC conversion
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const formattedDate = `${year}-${month}-${day}`;
     
     // Update display
     updateSelectedDateDisplay(selectedDate);
 
-    // Dispatch date change event
+    // Dispatch date change event with formatted date string instead of Date object
     document.dispatchEvent(
       new CustomEvent('datepicker-range-end', {
-        detail: selectedDate
+        detail: formattedDate
       })
     );
 

@@ -149,12 +149,17 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         const deviceIds = devices.map((d) => d.id).join(',');
         const selectedDateFromEvent = e.detail;
 
-        // Handle Date object from DatePickerCard
+        // Handle formatted date string from DatePickerCard (already in YYYY-MM-DD format)
         let formattedDate: string;
-        if (selectedDateFromEvent instanceof Date) {
-          formattedDate = moment(selectedDateFromEvent).format('YYYY-MM-DD');
-        } else if (typeof selectedDateFromEvent === 'string') {
-          formattedDate = moment(selectedDateFromEvent).format('YYYY-MM-DD');
+        if (typeof selectedDateFromEvent === 'string') {
+          // Already formatted as YYYY-MM-DD from DatePickerCard
+          formattedDate = selectedDateFromEvent;
+        } else if (selectedDateFromEvent instanceof Date) {
+          // Fallback for Date object - use local date without UTC conversion
+          const year = selectedDateFromEvent.getFullYear();
+          const month = String(selectedDateFromEvent.getMonth() + 1).padStart(2, '0');
+          const day = String(selectedDateFromEvent.getDate()).padStart(2, '0');
+          formattedDate = `${year}-${month}-${day}`;
         } else {
           formattedDate = moment().format('YYYY-MM-DD');
         }

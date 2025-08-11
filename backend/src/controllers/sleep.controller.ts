@@ -50,12 +50,24 @@ export const getSleepByDeviceId = async (req: Request, res: Response) => {
     const { deviceId } = req.params;
     const { startDate, endDate } = req.query;
 
-    // get day of week using moment
-    const date = moment(startDate as string).format('YYYY-MM-DD');
+    // Fix timezone issue: handle date string directly without moment conversion
+    let date: string;
+    if (startDate && typeof startDate === 'string') {
+      // If startDate is already in YYYY-MM-DD format, use it directly
+      if (startDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        date = startDate;
+      } else {
+        // Otherwise, parse it with moment but keep local timezone
+        date = moment(startDate).format('YYYY-MM-DD');
+      }
+    } else {
+      date = moment().format('YYYY-MM-DD');
+    }
+    
     const dayOfMonth = parseInt(date.split('-')[2]);
     const month = parseInt(date.split('-')[1]);
     const year = parseInt(date.split('-')[0]);
-    console.log(startDate, dayOfMonth, month, year);
+    console.log('getSleepByDeviceId - Original startDate:', startDate, 'Processed date:', date, 'Day:', dayOfMonth, 'Month:', month, 'Year:', year);
 
     let query = 'SELECT * FROM "SleepReport" WHERE device_id = $1 AND type = 1';
     const queryParams: any[] = [deviceId];
