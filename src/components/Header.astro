@@ -1,35 +1,29 @@
 ---
 import iohSmLogo from '/assets/images/ioh-sm-logo.png';
+import iohLgLogo from '/assets/images/ioh-lg-logo.png';
 ---
 
 <header class="bg-white border-b border-gray-200 fixed top-0 right-0 left-0 md:left-64 h-16 z-10">
   <div class="flex items-center justify-between h-full px-3 sm:px-4 lg:px-6">
-    <!-- Date Picker Section -->
-    <div class="flex-1 flex justify-start md:justify-start md:flex-initial">
-      <div id="date-range-picker" class="flex items-center">
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
-            </svg>
-          </div>
-          <input
-            id="datepicker-range-end"
-            name="end"
-            type="text"
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-48 lg:w-56 pl-10 pr-3 py-2.5 transition-colors"
-            placeholder="Select date"
-          />
-        </div>
-      </div>
+    <!-- Logo - Only visible on mobile -->
+    <div class="flex items-center md:hidden">
+      <img 
+        src={iohLgLogo.src} 
+        alt="Indosat IOH" 
+        class="h-8 w-auto"
+        loading="lazy"
+      />
     </div>
+
+    <!-- Spacer for desktop (hidden logo area) -->
+    <div class="hidden md:block"></div>
 
     <!-- User Controls -->
     <div class="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
       <!-- User Profile -->
       <div class="flex items-center space-x-2 ml-2">
         <!-- User name - Hidden on small screens -->
-        <span class="text-sm font-medium text-gray-700">Administrator</span>
+        <span class="text-sm font-medium text-gray-700">Terretech Nusantara</span>
         
         <!-- User avatar -->
         <div class="relative">
@@ -48,28 +42,6 @@ import iohSmLogo from '/assets/images/ioh-sm-logo.png';
 </header>
 
 <script>
-  import { Datepicker } from 'flowbite-datepicker';
-  import moment from 'moment';
-  import { fetchAndUpdateSleepData } from '../utils/sleep';
-
-  // Constants
-  const DATE_FORMAT = 'YYYY-MM-DD';
-  const PICKER_OPTIONS = {
-    format: 'yyyy-mm-dd',
-    autohide: true
-  };
-
-  // Helper functions
-  function getElement(id: string): HTMLElement {
-    const element = document.getElementById(id);
-    if (!element) throw new Error(`Element with id '${id}' not found`);
-    return element;
-  }
-
-  function createDatePicker(element: HTMLElement, options: object) {
-    return new Datepicker(element, options);
-  }
-
   // Mobile menu toggle handler
   function initializeMobileMenu() {
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
@@ -99,86 +71,11 @@ import iohSmLogo from '/assets/images/ioh-sm-logo.png';
     }
   }
 
-  // Date change handler
-  async function handleDateChange() {
-    const selectedDate = endPicker.getDate();
-    if (!selectedDate) return;
-
-    const formattedDate = moment(selectedDate).format(DATE_FORMAT);
-
-    // Dispatch date change event
-    document.dispatchEvent(
-      new CustomEvent('datepicker-range-end', {
-        detail: selectedDate
-      })
-    );
-
-    // Trigger click on active device
-    const activeDevice = document.querySelector('[data-device-id].border-blue-500');
-    if (activeDevice) {
-      activeDevice.dispatchEvent(
-        new MouseEvent('click', {
-          bubbles: true,
-          cancelable: true,
-          view: window,
-        })
-      );
-    }
-
-    await fetchAndUpdateSleepData({
-      start: formattedDate,
-      end: formattedDate,
-    });
-  }
-
-  // Initialize components
-  function initialize() {
-    // Initialize date picker
-    const endElement = getElement('datepicker-range-end');
-    const endPicker = createDatePicker(endElement, PICKER_OPTIONS);
-
-    // Set default date
-    const today = moment().format(DATE_FORMAT);
-    endPicker.setDate(today);
-
-    // Event listeners
-    endElement.addEventListener('changeDate', handleDateChange);
-
-    // Initialize mobile menu
-    initializeMobileMenu();
-
-    // Initial data fetch
-    setTimeout(() => {
-      handleDateChange();
-    }, 2000);
-
-    return endPicker;
-  }
-
-  // Initialize when DOM is ready
-  const endPicker = initialize();
+  // Initialize mobile menu when DOM is ready
+  document.addEventListener('DOMContentLoaded', initializeMobileMenu);
 </script>
 
 <style>
-  /* Datepicker styling */
-  .datepicker {
-    z-index: 60;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  }
-
-  /* Mobile responsive datepicker */
-  @media (max-width: 640px) {
-    .datepicker {
-      position: fixed !important;
-      top: 50% !important;
-      left: 50% !important;
-      transform: translate(-50%, -50%) !important;
-      margin: 0 !important;
-      width: 90vw !important;
-      max-width: 320px !important;
-    }
-  }
-
   /* Header responsive adjustments */
   @media (max-width: 768px) {
     header {
@@ -234,6 +131,23 @@ import iohSmLogo from '/assets/images/ioh-sm-logo.png';
   @media (max-width: 480px) {
     .text-sm {
       font-size: 0.75rem;
+    }
+  }
+
+  /* Logo styling for mobile */
+  .flex.items-center.md\\:hidden img {
+    transition: transform 0.2s ease-in-out;
+  }
+
+  .flex.items-center.md\\:hidden img:hover {
+    transform: scale(1.05);
+  }
+
+  /* Ensure proper spacing on mobile */
+  @media (max-width: 768px) {
+    .flex.items-center.justify-between {
+      padding-left: 1rem;
+      padding-right: 1rem;
     }
   }
 </style>

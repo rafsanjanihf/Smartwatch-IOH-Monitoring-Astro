@@ -6,6 +6,7 @@ import deviceRoutes from './routes/device.routes';
 import healthRoutes from './routes/health.routes';
 import sleepRoutes from './routes/sleep.routes';
 import userDeviceRoutes from './routes/userDevice.routes';
+import userShiftRoutes from './routes/userShift.routes';
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use('/api/devices', deviceRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/sleep', sleepRoutes);
 app.use('/api/user-devices', userDeviceRoutes);
+app.use('/api/user-shifts', userShiftRoutes);
 
 app.listen(port, () => {
   console.log(`Server berjalan di port ${port}`);

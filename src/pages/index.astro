@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import Header from '../components/Header.astro';
+import DatePickerCard from '../components/DatePickerCard.astro';
 import DeviceList from '../components/DeviceList';
 import SleepSummary from '../components/SleepSummary';
 import SleepTrackingChart from '../components/SleepTrackingChart';
@@ -64,8 +65,6 @@ try {
   let startDate: string | null = null;
   let endDate: string | null = null;
 
-  endDate = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
-  startDate = endDate;
   // Add event listener for device selection and date range
   document.addEventListener('DOMContentLoaded', () => {
     // Device selection handler
@@ -78,14 +77,14 @@ try {
 
     // Date range handler
     document.addEventListener('datepicker-range-end', ((e: CustomEvent) => {
-      startDate = e.detail.start;
-      endDate = e.detail.end;
+      const selectedDate = e.detail;
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      startDate = formattedDate;
+      endDate = formattedDate;
       if (selectedDeviceId) {
         fetchSleepData(selectedDeviceId, startDate, endDate);
       }
     }) as EventListener);
-
-
   });
 
   async function fetchSleepData(deviceId: string | null = null, start: string | null = null, end: string | null = null) {
@@ -144,6 +143,9 @@ try {
           minDuration: 6
         }}
       />
+
+      <!-- Date Picker Card -->
+      <DatePickerCard />
 
       <!-- Users and Health Tracking -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">

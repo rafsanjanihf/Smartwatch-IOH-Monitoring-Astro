@@ -1,0 +1,33 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Sidebar from '../components/Sidebar.astro';
+import Header from '../components/Header.astro';
+import ShiftSettings from '../components/ShiftSettings';
+import { api } from '../utils/api';
+import type { Device } from '../types';
+
+// Fetch data devices
+let devices: Device[] = [];
+try {
+  devices = await api.getAllDevices();
+  console.log('Devices loaded:', devices.length);
+} catch (error) {
+  console.error('Error fetching devices:', error);
+  devices = []; // Fallback to empty array
+}
+---
+
+<Layout title="Shift Settings">
+  <Sidebar />
+  <Header title="Shift Settings" />
+
+  <main class="ml-0 md:ml-64 pt-20 p-6">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Shift Settings</h1>
+      <p class="text-gray-600">Kelola pengaturan shift untuk semua device dengan mudah menggunakan template tanggal</p>
+    </div>
+
+    <!-- Shift Settings Component -->
+    <ShiftSettings client:load devices={devices} />
+  </main>
+</Layout>

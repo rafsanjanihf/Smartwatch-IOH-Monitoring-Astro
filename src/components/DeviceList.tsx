@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import type { Device, SleepData } from '../types';
+import type { Device, SleepData, UserShift, ScheduleResponse } from '../types';
 import { api } from '../utils/api';
 import moment from 'moment';
 
@@ -25,6 +25,9 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState<FilterOption>('all');
   const [sleepData, setSleepData] = useState<SleepData[]>([]);
+  const [scheduleData, setScheduleData] = useState<UserShift[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>('2025-08-09');
+
   const [isLoading, setIsLoading] = useState(false);
   const [filteredSleepCount, setFilteredSleepCount] = useState({
     normal: 0,
@@ -32,6 +35,29 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
     nodata: 0,
     total: 0,
   });
+
+  // Fetch schedule data based on selected date
+  const fetchScheduleData = async (date: string) => {
+    try {
+      console.log('Fetching schedule data for date:', date);
+      const scheduleResponse = await api.getUserShiftsByDate(date);
+      console.log('Schedule response:', scheduleResponse);
+      
+      // Handle both array and object response formats
+      if (Array.isArray(scheduleResponse)) {
+        setScheduleData(scheduleResponse);
+      } else if (scheduleResponse && scheduleResponse.all) {
+        setScheduleData(scheduleResponse.all);
+      } else {
+        setScheduleData([]);
+      }
+      
+      console.log('Schedule data set:', scheduleData);
+    } catch (error) {
+      console.error('Error fetching schedule data:', error);
+      setScheduleData([]);
+    }
+  };
 
   // Fetch sleep data when component mounts
   useEffect(() => {
@@ -75,7 +101,8 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
     };
 
     fetchSleepData();
-  }, [devices]);
+    fetchScheduleData(selectedDate);
+  }, [devices, selectedDate]);
 
   // Auto-select first device on initial load (alphabetically first)
   useEffect(() => {
@@ -97,13 +124,18 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       try {
         setIsLoading(true);
         const deviceIds = devices.map((d) => d.id).join(',');
-        const selectedDate = e.detail;
+        const selectedDateFromEvent = e.detail;
 
         // Format date for API call
-        const formattedDate = moment(selectedDate).format('YYYY-MM-DD');
+        const formattedDate = moment(selectedDateFromEvent).format('YYYY-MM-DD');
+        setSelectedDate(formattedDate);
 
+        // Fetch both sleep data and schedule data
         const data = await api.getAllSleepData(deviceIds, formattedDate);
         setSleepData(data);
+        
+        // Fetch schedule data for the selected date
+        await fetchScheduleData(formattedDate);
 
         // Recalculate counts
         const counts = data.reduce(
@@ -199,8 +231,39 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
     );
   };
 
+  // Helper function to get device schedule
+  const getDeviceSchedule = (deviceId: string): UserShift | null => {
+    return scheduleData.find(schedule => schedule.device_id === deviceId) || null;
+  };
+
+
+
+  // Helper function to render schedule badge
+  const renderScheduleBadge = (scheduleType: string | undefined) => {
+    const scheduleConfig = {
+      fullday: { label: 'Fullday', bgColor: 'bg-blue-100', textColor: 'text-blue-800' },
+      day: { label: 'Pagi', bgColor: 'bg-yellow-100', textColor: 'text-yellow-800' },
+      night: { label: 'Malam', bgColor: 'bg-purple-100', textColor: 'text-purple-800' },
+      off: { label: 'OFF', bgColor: 'bg-red-100', textColor: 'text-red-800' }
+    };
+
+    const config = scheduleType ? scheduleConfig[scheduleType as keyof typeof scheduleConfig] : null;
+
+    return (
+      <span
+        className={`px-2 py-1 rounded-full text-xs ${
+          config ? `${config.bgColor} ${config.textColor}` : 'bg-gray-100 text-gray-600'
+        }`}
+      >
+        {config ? config.label : 'No Schedule'}
+      </span>
+    );
+  };
+
   return (
     <div className={`bg-white rounded-lg p-4 lg:p-6 ${className}`}>
+
+      
       <h3 className='text-base lg:text-lg font-semibold mb-3 lg:mb-4'>List Devices</h3>
 
       {/* Search and Filter Controls */}
@@ -279,6 +342,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         ) : (
           filteredDevices.map((device, index) => {
             const deviceSleepData = sleepData.find((sleep) => sleep.device_id === device.id);
+            const deviceSchedule = getDeviceSchedule(device.id);
             return (
               <div
                 key={device.id}
@@ -292,8 +356,11 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
                   }`}
               >
                 <div className='flex items-center justify-between'>
-                  <div>
-                    <h4 className='text-sm lg:text-base font-medium'>{device.name || 'Unnamed Device'}</h4>
+                  <div className='flex-1'>
+                    <div className='flex items-center gap-2 mb-1'>
+                      <h4 className='text-sm lg:text-base font-medium'>{device.name || 'Unnamed Device'}</h4>
+                      {renderScheduleBadge(deviceSchedule?.schedule_type)}
+                    </div>
                     <p className='text-xs lg:text-sm text-gray-600'>Operator {index + 1}</p>
                     {deviceSleepData && deviceSleepData.sleepTotalTime > 0 && (
                       <p className='text-xs text-gray-500 mt-1'>

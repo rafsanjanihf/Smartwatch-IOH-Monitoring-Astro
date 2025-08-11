@@ -82,3 +82,35 @@ export interface SleepStats {
   averageQuality: number;
   sleepSessions: number;
 }
+
+export interface UserShift {
+  id: string;
+  status?: string;
+  date_created?: string;
+  date_updated?: string;
+  device_id: string;
+  schedule_type: 'fullday' | 'day' | 'night' | 'off';
+  date: string;
+  device_name?: string;
+  device_mac?: string;
+}
+
+export interface ScheduleStats {
+  fullday: number;
+  day: number;
+  night: number;
+  off: number;
+  total: number;
+}
+
+export interface ScheduleResponse {
+  date: string;
+  total: number;
+  schedules: {
+    fullday: UserShift[];
+    day: UserShift[];
+    night: UserShift[];
+    off: UserShift[];
+  };
+  all: UserShift[];
+}

@@ -1,0 +1,231 @@
+---
+// DatePickerCard.astro - Komponen Date Picker untuk Dashboard
+---
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-lg font-semibold text-gray-900">Filter Tanggal</h3>
+  </div>
+
+  <div class="space-y-4">
+    <!-- Date Picker Input -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+      <div class="relative">
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <svg class="w-5 h-5 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
+            </svg>
+          </div>
+          <input
+            id="datepicker-range-end"
+            name="end"
+            type="text"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-3 transition-colors hover:bg-gray-100"
+            placeholder="Pilih tanggal monitoring"
+            readonly
+          />
+        </div>
+      </div>
+
+      <!-- Quick Date Selection -->
+      <div class="grid grid-cols-2 sm:grid-cols-2 gap-2">
+        <button
+          type="button"
+          class="quick-date-btn px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+          data-days="0"
+        >
+          Hari Ini
+        </button>
+        <button
+          type="button"
+          class="quick-date-btn px-3 py-2 text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+          data-days="1"
+        >
+          Kemarin
+        </button>
+      </div>
+      <!-- Current Selection Display -->
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+        <div class="flex items-center">
+          <svg class="w-4 h-4 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-sm text-blue-800">
+            Menampilkan data untuk: <span id="selected-date-display" class="font-medium">-</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { Datepicker } from 'flowbite-datepicker';
+  import moment from 'moment';
+  import { fetchAndUpdateSleepData } from '../utils/sleep';
+
+  // Constants
+  const DATE_FORMAT = 'YYYY-MM-DD';
+  const DISPLAY_FORMAT = 'DD MMMM YYYY';
+  const PICKER_OPTIONS = {
+    format: 'yyyy-mm-dd',
+    autohide: true,
+    todayHighlight: true,
+    clearBtn: true,
+    todayBtn: true,
+    maxDate: new Date() // Tidak bisa pilih tanggal masa depan
+  };
+
+  // Helper functions
+  function getElement(id: string): HTMLElement {
+    const element = document.getElementById(id);
+    if (!element) throw new Error(`Element with id '${id}' not found`);
+    return element;
+  }
+
+  function createDatePicker(element: HTMLElement, options: object) {
+    return new Datepicker(element, options);
+  }
+
+  function updateSelectedDateDisplay(date: Date) {
+    const displayElement = document.getElementById('selected-date-display');
+    if (displayElement) {
+      displayElement.textContent = moment(date).format(DISPLAY_FORMAT);
+    }
+  }
+
+  // Date change handler
+  async function handleDateChange() {
+    const selectedDate = endPicker.getDate();
+    if (!selectedDate) return;
+
+    const formattedDate = moment(selectedDate).format(DATE_FORMAT);
+    
+    // Update display
+    updateSelectedDateDisplay(selectedDate);
+
+    // Dispatch date change event
+    document.dispatchEvent(
+      new CustomEvent('datepicker-range-end', {
+        detail: selectedDate
+      })
+    );
+
+    // Trigger click on active device
+    const activeDevice = document.querySelector('[data-device-id].border-blue-500');
+    if (activeDevice) {
+      activeDevice.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          view: window,
+        })
+      );
+    }
+
+    await fetchAndUpdateSleepData({
+      start: formattedDate,
+      end: formattedDate,
+    });
+  }
+
+  // Quick date selection handler
+  function handleQuickDateSelection(days: number) {
+    const targetDate = moment().subtract(days, 'days').toDate();
+    endPicker.setDate(targetDate);
+    handleDateChange();
+  }
+
+  // Initialize components
+  function initialize() {
+    // Initialize date picker
+    const endElement = getElement('datepicker-range-end');
+    const endPicker = createDatePicker(endElement, PICKER_OPTIONS);
+
+    // Set default date (today)
+    const today = new Date();
+    endPicker.setDate(today);
+    updateSelectedDateDisplay(today);
+
+    // Event listeners
+    endElement.addEventListener('changeDate', handleDateChange);
+
+    // Quick date buttons
+    const quickDateButtons = document.querySelectorAll('.quick-date-btn');
+    quickDateButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        const days = parseInt((e.target as HTMLElement).getAttribute('data-days') || '0');
+        handleQuickDateSelection(days);
+        
+        // Update button states - reset all buttons to default
+        quickDateButtons.forEach(btn => {
+          btn.classList.remove('bg-blue-500', 'text-white', 'border-blue-500');
+          btn.classList.add('bg-gray-100', 'text-gray-700', 'border-gray-300');
+        });
+        
+        // Set active button
+        button.classList.remove('bg-gray-100', 'text-gray-700', 'border-gray-300');
+        button.classList.add('bg-blue-500', 'text-white', 'border-blue-500');
+      });
+    });
+
+    // Initial data fetch
+    setTimeout(() => {
+      handleDateChange();
+    }, 1000);
+
+    return endPicker;
+  }
+
+  // Initialize when DOM is ready
+  let endPicker: any;
+  document.addEventListener('DOMContentLoaded', () => {
+    endPicker = initialize();
+  });
+</script>
+
+<style>
+  /* Datepicker styling */
+  .datepicker {
+    z-index: 60;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-radius: 0.5rem;
+  }
+
+  /* Mobile responsive datepicker */
+  @media (max-width: 640px) {
+    .datepicker {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      margin: 0 !important;
+      width: 90vw !important;
+      max-width: 320px !important;
+    }
+  }
+
+  /* Quick date button hover effects */
+  .quick-date-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Focus states for accessibility */
+  .quick-date-btn:focus,
+  input:focus {
+    outline: 2px solid #3B82F6;
+    outline-offset: 2px;
+  }
+
+  /* Smooth transitions */
+  .quick-date-btn {
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Card hover effect */
+  .bg-white:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+</style>

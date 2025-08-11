@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Frontend API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .schedule-badge { 
+            padding: 4px 8px; 
+            border-radius: 12px; 
+            font-size: 12px; 
+            margin-left: 8px; 
+        }
+        .day { background-color: #fef3c7; color: #92400e; }
+        .night { background-color: #e0e7ff; color: #3730a3; }
+        .off { background-color: #fee2e2; color: #991b1b; }
+        .fullday { background-color: #dbeafe; color: #1e40af; }
+    </style>
+</head>
+<body>
+    <h1>Test Schedule API</h1>
+    <button onclick="testAPI()">Test Schedule API for 2025-08-09</button>
+    <button onclick="testAPI2()">Test Schedule API for 2025-08-10</button>
+    
+    <div id="results"></div>
+
+    <script>
+        async function testAPI() {
+            try {
+                const response = await fetch('http://localhost:3031/api/user-shifts/date/2025-08-09');
+                const data = await response.json();
+                
+                console.log('API Response:', data);
+                
+                let html = '<h2>Schedule Data for 2025-08-09:</h2>';
+                if (data.all && data.all.length > 0) {
+                    data.all.forEach(schedule => {
+                        html += `<div>
+                            <strong>${schedule.device_name}</strong>
+                            <span class="schedule-badge ${schedule.schedule_type}">${schedule.schedule_type}</span>
+                            <small> (${schedule.device_id})</small>
+                        </div>`;
+                    });
+                } else {
+                    html += '<p>No schedule data found</p>';
+                }
+                
+                document.getElementById('results').innerHTML = html;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('results').innerHTML = '<p>Error: ' + error.message + '</p>';
+            }
+        }
+
+        async function testAPI2() {
+            try {
+                const response = await fetch('http://localhost:3031/api/user-shifts/date/2025-08-10');
+                const data = await response.json();
+                
+                console.log('API Response:', data);
+                
+                let html = '<h2>Schedule Data for 2025-08-10:</h2>';
+                if (data.all && data.all.length > 0) {
+                    data.all.forEach(schedule => {
+                        html += `<div>
+                            <strong>${schedule.device_name}</strong>
+                            <span class="schedule-badge ${schedule.schedule_type}">${schedule.schedule_type}</span>
+                            <small> (${schedule.device_id})</small>
+                        </div>`;
+                    });
+                } else {
+                    html += '<p>No schedule data found</p>';
+                }
+                
+                document.getElementById('results').innerHTML = html;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('results').innerHTML = '<p>Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

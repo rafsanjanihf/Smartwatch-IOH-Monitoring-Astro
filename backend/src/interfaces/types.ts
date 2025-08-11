@@ -91,3 +91,13 @@ export interface UserDevice {
   device_id?: string;
   // tambahkan field lain sesuai kebutuhan
 }
+
+export interface UserShift {
+  id: string;
+  status?: string;
+  date_created?: Date;
+  date_updated?: Date;
+  device_id: string;
+  schedule_type: 'fullday' | 'day' | 'night' | 'off';
+  date: Date;
+}
