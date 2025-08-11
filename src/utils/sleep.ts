@@ -124,15 +124,13 @@ export async function fetchAndUpdateSleepData(dateRange: DateRange): Promise<voi
   try {
     setLoadingState(true);
 
-    const response = await fetch(
-      `${import.meta.env.PUBLIC_API_URL}/api/sleep/device/${deviceId}?` +
-        `startDate=${moment(dateRange.start).toISOString()}&` +
-        `endDate=${moment(dateRange.end).toISOString()}`,
+    // Use the existing API function instead of manual fetch
+    const sleepData = await api.getDeviceSleepData(
+      deviceId,
+      moment(dateRange.start).toISOString(),
+      moment(dateRange.end).toISOString()
     );
 
-    if (!response.ok) throw new Error('Failed to fetch sleep data');
-
-    const sleepData = await response.json();
     emitEvent('sleep-data-update', sleepData);
   } catch (error) {
     console.error('Error fetching sleep data:', error);

@@ -94,27 +94,11 @@ try {
     }
 
     try {
-      let url = `${import.meta.env.PUBLIC_API_URL}/api/sleep/device/${deviceId || ''}`;
-      const params = new URLSearchParams();
-      if (start) {
-        params.append('startDate', start);
-      } else {
-        params.append('startDate', new Date().toISOString());
-      }
-      if (end) {
-        params.append('endDate', end);
-      } else {
-        params.append('endDate', new Date().toISOString());
-      }
-
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch sleep data');
-
-      const data = await response.json();
+      // Use the existing API function instead of manual fetch
+      const startDate = start ? new Date(start).toISOString() : new Date().toISOString();
+      const endDate = end ? new Date(end).toISOString() : new Date().toISOString();
+      
+      const data = await api.getDeviceSleepData(deviceId, startDate, endDate);
       document.dispatchEvent(new CustomEvent('sleep-data-update', { detail: data }));
     } catch (error) {
       console.error('Error fetching sleep data:', error);
