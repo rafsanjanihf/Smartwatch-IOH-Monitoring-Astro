@@ -1,18 +1,12 @@
 ---
-import iohSmLogo from '/assets/images/ioh-sm-logo.png';
-import iohLgLogo from '/assets/images/ioh-lg-logo.png';
+import Logo from './Logo.astro';
 ---
 
 <header class="bg-white border-b border-gray-200 fixed top-0 right-0 left-0 md:left-64 h-16 z-10">
   <div class="flex items-center justify-between h-full px-3 sm:px-4 lg:px-6">
     <!-- Logo - Only visible on mobile -->
     <div class="flex items-center md:hidden">
-      <img 
-        src={iohLgLogo.src} 
-        alt="Indosat IOH" 
-        class="h-8 w-auto"
-        loading="lazy"
-      />
+      <Logo size="lg" />
     </div>
 
     <!-- Spacer for desktop (hidden logo area) -->
@@ -27,11 +21,10 @@ import iohLgLogo from '/assets/images/ioh-lg-logo.png';
         
         <!-- User avatar -->
         <div class="relative">
-          <img
-            src={iohSmLogo.src}
+          <Logo 
+            size="sm" 
             alt="User Avatar"
-            class="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-gray-200 hover:border-gray-300 transition-colors cursor-pointer"
-            loading="lazy"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-gray-200 hover:border-gray-300 transition-colors cursor-pointer"
           />
           <!-- Online status indicator -->
           <span class="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 border-2 border-white rounded-full"></span>

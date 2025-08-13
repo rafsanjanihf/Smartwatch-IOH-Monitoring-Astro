@@ -9,6 +9,7 @@ interface DeviceListProps {
 }
 
 type FilterOption = 'all' | 'normal' | 'abnormal' | 'nodata';
+type ShiftFilterOption = 'all' | 'day' | 'night' | 'other';
 
 export default function DeviceList({ devices: initialDevices, className }: DeviceListProps) {
   // Sort devices by idEmployee first, then by name
@@ -38,6 +39,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
   const [activeDeviceId, setActiveDeviceId] = useState<string | null>(sortedDevices[0]?.id || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState<FilterOption>('all');
+  const [shiftFilterOption, setShiftFilterOption] = useState<ShiftFilterOption>('all');
   const [sleepData, setSleepData] = useState<SleepData[]>([]);
   const [scheduleData, setScheduleData] = useState<UserShift[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(moment().format('YYYY-MM-DD'));
@@ -47,6 +49,13 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
     normal: 0,
     abnormal: 0,
     nodata: 0,
+    total: 0,
+  });
+
+  const [filteredShiftCount, setFilteredShiftCount] = useState({
+    day: 0,
+    night: 0,
+    other: 0,
     total: 0,
   });
 
@@ -111,6 +120,8 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         counts.total += devicesWithoutSleepData.length;
         
         setFilteredSleepCount(counts);
+        
+        // Shift counts will be calculated by the dedicated useEffect
       } catch (error) {
         console.error('Error fetching sleep data:', error);
       } finally {
@@ -132,14 +143,53 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
     if (sortedDevices.length > 0 && !activeDeviceId) {
       const firstDevice = sortedDevices[0];
       setActiveDeviceId(firstDevice.id);
-      // Dispatch device-select event to notify other components
-      document.dispatchEvent(
-        new CustomEvent('device-select', {
-          detail: { deviceId: firstDevice.id },
-        }),
-      );
+      
+      // Add a small delay to ensure HealthChart is ready to receive the event
+      setTimeout(() => {
+        // Dispatch device-select event to notify other components
+        document.dispatchEvent(
+          new CustomEvent('device-select', {
+            detail: { deviceId: firstDevice.id },
+          }),
+        );
+      }, 100);
     }
   }, [sortedDevices, activeDeviceId]);
+
+  // Calculate shift counts whenever scheduleData or devices change
+  useEffect(() => {
+    const calculateShiftCounts = () => {
+      console.log('Calculating shift counts with scheduleData:', scheduleData);
+      const shiftCounts = devices.reduce(
+        (acc, device) => {
+          const deviceSchedule = scheduleData.find(schedule => schedule.device_id === device.id);
+          const scheduleType = deviceSchedule?.schedule_type;
+          
+          console.log(`Device ${device.id}: schedule_type = ${scheduleType}`);
+          
+          if (scheduleType === 'day') {
+            acc.day++;
+          } else if (scheduleType === 'night') {
+            acc.night++;
+          } else if (scheduleType && scheduleType !== 'day' && scheduleType !== 'night') {
+            acc.other++;
+          } else {
+            acc.other++; // No schedule data counts as 'other'
+          }
+          acc.total++;
+          return acc;
+        },
+        { day: 0, night: 0, other: 0, total: 0 }
+      );
+      
+      console.log('Calculated shift counts:', shiftCounts);
+      setFilteredShiftCount(shiftCounts);
+    };
+
+    if (scheduleData.length > 0 || devices.length > 0) {
+      calculateShiftCounts();
+    }
+  }, [scheduleData, devices]);
 
   // Listen for date changes
   useEffect(() => {
@@ -173,7 +223,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         // Fetch schedule data for the selected date
         await fetchScheduleData(formattedDate);
 
-        // Recalculate counts
+        // Recalculate sleep counts
         const counts = data.reduce(
           (acc, sleep) => {
             if (sleep.sleepTotalTime > 0) {
@@ -198,6 +248,8 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         counts.total += devicesWithoutSleepData.length;
         
         setFilteredSleepCount(counts);
+        
+        // Shift counts will be calculated automatically by the useEffect above
       } catch (error) {
         console.error('Error fetching sleep data:', error);
       } finally {
@@ -212,7 +264,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
     return () => {
       document.removeEventListener('datepicker-range-end', handleDateChange as EventListener);
     };
-  }, [devices]);
+  }, [devices, scheduleData]);
 
   // Filter devices based on search query and sleep data
   const filteredDevices = useMemo(() => {
@@ -224,6 +276,22 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         device.idEmployee?.toLowerCase().includes(searchQuery.toLowerCase());
 
       if (!matchesSearch) return false;
+
+      // Then apply shift filter
+      if (shiftFilterOption !== 'all') {
+        const deviceSchedule = scheduleData.find(schedule => schedule.device_id === device.id);
+        const scheduleType = deviceSchedule?.schedule_type;
+        
+        if (shiftFilterOption === 'day' && scheduleType !== 'day') {
+          return false;
+        }
+        if (shiftFilterOption === 'night' && scheduleType !== 'night') {
+          return false;
+        }
+        if (shiftFilterOption === 'other' && (scheduleType === 'day' || scheduleType === 'night')) {
+          return false;
+        }
+      }
 
       // Then apply sleep data filter
       if (filterOption === 'all') return true;
@@ -271,7 +339,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       const nameB = (b.name || 'Unnamed Device').toLowerCase();
       return nameA.localeCompare(nameB);
     });
-  }, [devices, searchQuery, filterOption, sleepData]);
+  }, [devices, searchQuery, filterOption, shiftFilterOption, sleepData, scheduleData]);
 
   const handleDeviceClick = (deviceId: string) => {
     setActiveDeviceId(deviceId);
@@ -343,46 +411,45 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
           </svg>
         </div>
 
-        {/* Filter Options */}
-        <div className='flex gap-2 lg:gap-3 overflow-x-auto pb-2 scrollbar-hide'>
-          <button
-            onClick={() => setFilterOption('all')}
-            className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0
-              ${filterOption === 'all' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setFilterOption('normal')}
-            className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0
-              ${
-                filterOption === 'normal'
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-          >
-            Normal Sleep ({filteredSleepCount.normal})
-          </button>
-          <button
-            onClick={() => setFilterOption('abnormal')}
-            className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0
-              ${
-                filterOption === 'abnormal' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-          >
-            Abnormal Sleep ({filteredSleepCount.abnormal})
-          </button>
-          <button
-            onClick={() => setFilterOption('nodata')}
-            className={`px-3 lg:px-4 py-2 rounded-lg text-xs lg:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0
-              ${
-                filterOption === 'nodata' ? 'bg-gray-300 text-gray-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-          >
-            No Data Sleep ({filteredSleepCount.nodata})
-          </button>
+        {/* Filter Options - 2 Columns Layout */}
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
+          {/* Left Column - Shift Filter */}
+          <div>
+            <label htmlFor='shift-filter' className='block text-sm font-medium text-gray-700 mb-2'>
+              Filter Shift
+            </label>
+            <select
+              id='shift-filter'
+              value={shiftFilterOption}
+              onChange={(e) => setShiftFilterOption(e.target.value as ShiftFilterOption)}
+              className='w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+            >
+              <option value='all'>All Shifts</option>
+              <option value='day'>Pagi ({filteredShiftCount.day})</option>
+              <option value='night'>Malam ({filteredShiftCount.night})</option>
+              <option value='other'>Other ({filteredShiftCount.other})</option>
+            </select>
+          </div>
+          
+          {/* Right Column - Sleep Filter */}
+          <div>
+            <label htmlFor='sleep-filter' className='block text-sm font-medium text-gray-700 mb-2'>
+              Filter Sleep
+            </label>
+            <select
+              id='sleep-filter'
+              value={filterOption}
+              onChange={(e) => setFilterOption(e.target.value as FilterOption)}
+              className='w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+            >
+              <option value='all'>All Sleep Status</option>
+              <option value='normal'>Normal Sleep ({filteredSleepCount.normal})</option>
+              <option value='abnormal'>Abnormal Sleep ({filteredSleepCount.abnormal})</option>
+              <option value='nodata'>No Data Sleep ({filteredSleepCount.nodata})</option>
+            </select>
+          </div>
         </div>
-      </div>
+       </div>
 
       {/* Device List */}
       <div className='space-y-3 lg:space-y-4 max-h-[400px] lg:max-h-[500px] overflow-y-auto'>

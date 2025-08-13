@@ -10,7 +10,7 @@ const menuItems = [
   { icon: "settings", label: "Shift Settings", path: "/shift-settings" },
   // { icon: "settings", label: "Account Setting", path: "/settings" },
 ];
-import iohLgLogo from '/assets/images/ioh-lg-logo.png';
+import Logo from './Logo.astro';
 
 // Dapatkan path halaman saat ini
 const currentPath = Astro.url.pathname;
@@ -28,7 +28,7 @@ const isActiveMenuItem = (itemPath, currentPath) => {
 
 <aside class="w-64 h-screen bg-white fixed left-0 top-0 border-r border-gray-200 z-20 md:block hidden">
   <div class="p-4 border-b border-gray-200 flex items-center justify-center">
-    <img src={iohLgLogo.src} alt="Indosat" class="h-8" />
+    <Logo size="lg" alt="Indosat" />
   </div>
 
   <nav class="p-4">

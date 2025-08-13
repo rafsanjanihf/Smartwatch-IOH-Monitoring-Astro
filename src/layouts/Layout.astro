@@ -16,6 +16,11 @@ const { title } = Astro.props;
     <meta name="description" content="Smartwatch Monitoring Solution" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    
+    <!-- Preload critical logos for better performance -->
+    <link rel="preload" as="image" href="/ioh-lg-logo.png" />
+    <link rel="preload" as="image" href="/ioh-sm-logo.png" />
+    
     <title>{title}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   </head>

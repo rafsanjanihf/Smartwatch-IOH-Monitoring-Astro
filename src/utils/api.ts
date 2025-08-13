@@ -37,6 +37,12 @@ export const api = {
   // Health Data
   getAllHealthData: () => fetchApi<Health[]>('/health'),
   getDeviceHealthData: (deviceId: string) => fetchApi<Health[]>(`/health/device/${deviceId}`),
+  getHealthByDeviceId: (deviceId: string, startDate?: string, endDate?: string) => {
+    const query = new URLSearchParams();
+    if (startDate) query.append('start_date', startDate);
+    if (endDate) query.append('end_date', endDate);
+    return fetchApi<Health[]>(`/health/device/${deviceId}${query.toString() ? `?${query.toString()}` : ''}`);
+  },
 
   // Sleep Data
   getAllSleepData: (deviceIds: string, date?: string) => {

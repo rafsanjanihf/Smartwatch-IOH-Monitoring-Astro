@@ -30,7 +30,8 @@ export const getHealthByDeviceId = async (req: Request, res: Response) => {
       queryParams.push(new Date(start_date as string).toISOString(), new Date(end_date as string).toISOString());
     }
 
-    query += ' ORDER BY start_time_utc DESC LIMIT 1000';
+    console.log('Executing query:', query);
+    console.log('Query params:', queryParams);
 
     const result = await pool.query(query, queryParams);
     res.json(result.rows);
@@ -47,16 +48,15 @@ export const getHealthByDeviceReport = async (req: Request, res: Response) => {
     const { date } = req.query;
 
     const startDate = moment(date as string)
-      .subtract(1, 'days')
-      .set('hour', 20)
-      .set('minute', 0)
-      .set('second', 0)
-      .utc();
-    const endDate = moment(date as string)
-      .set('hour', 19)
-      .set('minute', 59)
-      .set('second', 59)
-      .utc();
+    .set('hour', 0)
+    .set('minute', 0)
+    .set('second', 0)
+    .utc();
+  const endDate = moment(date as string)
+    .set('hour', 23)
+    .set('minute', 59)
+    .set('second', 59)
+    .utc();
 
     let query = `
       SELECT * FROM "Health"

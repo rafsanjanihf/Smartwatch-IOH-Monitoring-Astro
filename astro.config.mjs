@@ -10,4 +10,14 @@ import cloudflare from '@astrojs/cloudflare';
 export default defineConfig({
   integrations: [tailwind(), react(), sentry(), spotlightjs()],
   adapter: cloudflare(),
+  vite: {
+    build: {
+      assetsInlineLimit: 0, // Prevent inlining assets to allow better caching
+    },
+    server: {
+      headers: {
+        'Cache-Control': 'public, max-age=31536000', // Cache static assets for 1 year
+      }
+    }
+  }
 });

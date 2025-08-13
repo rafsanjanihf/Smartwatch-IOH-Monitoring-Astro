@@ -1,0 +1,21 @@
+---
+interface Props {
+  size?: 'sm' | 'lg';
+  className?: string;
+  alt?: string;
+}
+
+const { size = 'lg', className = '', alt = 'Indosat IOH' } = Astro.props;
+
+const logoSrc = size === 'sm' ? '/ioh-sm-logo.png' : '/ioh-lg-logo.png';
+const defaultClass = size === 'sm' ? 'h-8 w-8' : 'h-8 w-auto';
+---
+
+<img 
+  src={logoSrc}
+  alt={alt}
+  class={`${defaultClass} ${className}`}
+  loading="lazy"
+  decoding="async"
+  fetchpriority={size === 'lg' ? 'high' : 'low'}
+/>

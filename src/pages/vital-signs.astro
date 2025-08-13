@@ -1,135 +1,158 @@
 ---
-import { devices } from '../data/mock-data';
 import Layout from '../layouts/Layout.astro';
 import Sidebar from '../components/Sidebar.astro';
 import Header from '../components/Header.astro';
-import UserList from '../components/UserList.astro';
+import DatePickerCard from '../components/DatePickerCard.astro';
+import VitalSignsDeviceList from '../components/VitalSignsDeviceList';
+import HealthChart from '../components/HealthChart';
+import StatisticsCards from '../components/StatisticsCards';
 import { api } from '../utils/api';
+import type { Device, Health, SleepData } from '../types';
+import moment from 'moment';
 
-// Mengambil data kesehatan
-let healthData = [];
+// Fetch data devices
+let devices: Device[] = [];
+try {
+  devices = await api.getAllDevices();
+} catch (error) {
+  console.error('Error fetching devices:', error);
+}
+
+// Fetch all sleep data untuk menghitung total sleep records
+let allSleepData: SleepData[] = [];
+let sleepRecordsCount = 0;
+try {
+  if (devices.length > 0) {
+    const deviceIds = devices.map(d => d.id).join(',');
+    allSleepData = await api.getAllSleepData(deviceIds);
+    
+    // Hitung Normal Sleep + Abnormal Sleep (exclude No Data)
+    sleepRecordsCount = allSleepData.filter(sleep => sleep.sleepTotalTime > 0).length;
+  }
+} catch (error) {
+  console.error('Error fetching all sleep data:', error);
+}
+
+// Fetch health data untuk statistik
+let healthData: Health[] = [];
+let healthStats = {
+  heartRate: { max: 0, min: 0, avg: 0 },
+  bloodOxygen: { max: 0, min: 0, avg: 0 },
+  abnormalHeartRate: 0,
+  abnormalBloodOxygen: 0
+};
+
 try {
   healthData = await api.getAllHealthData();
+  
+  if (healthData.length > 0) {
+    // Process heart rate data
+    const heartRateData = healthData.filter(h => h.data_type === 'heart_rate').map(h => parseFloat(h.string_val.toString()));
+    if (heartRateData.length > 0) {
+      healthStats.heartRate.max = Math.max(...heartRateData);
+      healthStats.heartRate.min = Math.min(...heartRateData);
+      healthStats.heartRate.avg = Math.round(heartRateData.reduce((a, b) => a + b, 0) / heartRateData.length);
+      // Abnormal heart rate: < 60 or > 100 bpm
+      healthStats.abnormalHeartRate = heartRateData.filter(hr => hr < 60 || hr > 100).length;
+    }
+    
+    // Process blood oxygen data
+    const bloodOxygenData = healthData.filter(h => h.data_type === 'blood_oxygen').map(h => parseFloat(h.string_val.toString()));
+    if (bloodOxygenData.length > 0) {
+      healthStats.bloodOxygen.max = Math.max(...bloodOxygenData);
+      healthStats.bloodOxygen.min = Math.min(...bloodOxygenData);
+      healthStats.bloodOxygen.avg = Math.round(bloodOxygenData.reduce((a, b) => a + b, 0) / bloodOxygenData.length);
+      // Abnormal blood oxygen: < 95%
+      healthStats.abnormalBloodOxygen = bloodOxygenData.filter(bo => bo < 95).length;
+    }
+  }
 } catch (error) {
   console.error('Error fetching health data:', error);
 }
 ---
 
+<script>
+  // Initialize state
+  let selectedDeviceId: string | null = null;
+  let startDate: string | null = null;
+  let endDate: string | null = null;
+
+  // Add event listener for device selection and date range
+  document.addEventListener('DOMContentLoaded', () => {
+    // Device selection handler
+    document.addEventListener('device-select', ((e: CustomEvent) => {
+      selectedDeviceId = e.detail.deviceId;
+      if (startDate && endDate) {
+        // Trigger health data update
+        document.dispatchEvent(new CustomEvent('health-data-update', { 
+          detail: { deviceId: selectedDeviceId, date: startDate } 
+        }));
+      }
+    }) as EventListener);
+
+    // Date range handler
+    document.addEventListener('datepicker-range-end', ((e: CustomEvent) => {
+      const selectedDate = e.detail;
+      // selectedDate is now already a formatted date string (YYYY-MM-DD) from DatePickerCard
+      const formattedDate = typeof selectedDate === 'string' ? selectedDate : selectedDate.toISOString().split('T')[0];
+      startDate = formattedDate;
+      endDate = formattedDate;
+      
+      // Update StatisticsCards with selected date
+      document.dispatchEvent(new CustomEvent('date-change', { detail: formattedDate }));
+      
+      if (selectedDeviceId) {
+        // Trigger health data update
+        document.dispatchEvent(new CustomEvent('health-data-update', { 
+          detail: { deviceId: selectedDeviceId, date: formattedDate } 
+        }));
+      }
+    }) as EventListener);
+  });
+</script>
+
 <Layout title="Smartwatch Monitoring Solution">
   <Sidebar />
-  <Header title="Dashboard" />
+  <Header title="Vital Signs" />
 
-  <main class="ml-64 pt-16 p-6">
+  <main class="ml-0 md:ml-64 pt-20 p-6">
     <div class="grid grid-cols-1 gap-6">
       <!-- Statistics Cards -->
-      <div class="grid grid-cols-4 gap-4">
-        <div class="bg-[#474F7C] p-6 rounded-lg text-white">
-          <h3 class="text-4xl font-bold mb-2">500</h3>
-          <p class="text-sm opacity-80">Device Registered</p>
-        </div>
+      <StatisticsCards
+        client:load
+        deviceCount={devices.filter(device => device.status === 'published').length}
+        sleepRecordsCount={sleepRecordsCount}
+        deviceIds={devices.map(d => d.id).join(',')}
+        heartRateStats={{
+          avgBpm: healthStats.heartRate.avg,
+          maxBpm: healthStats.heartRate.max,
+          minBpm: healthStats.heartRate.min
+        }}
+        sleepStats={{
+          avgDuration: 7,
+          maxDuration: 9,
+          minDuration: 6
+        }}
+        abnormalHeartRate={healthStats.abnormalHeartRate}
+        abnormalBloodOxygen={healthStats.abnormalBloodOxygen}
+      />
 
-        <div class="bg-white p-6 rounded-lg flex items-center justify-between">
-          <div>
-            <h3 class="text-4xl font-bold mb-2">10</h3>
-            <p class="text-sm text-gray-600">Device Offline</p>
-          </div>
-          <div class="w-16 h-16 flex items-center justify-center">
-            <div class="relative w-full h-full">
-              <div class="absolute inset-0 flex items-center justify-center">
-                <span class="text-red-500 font-semibold">10</span>
-              </div>
-              <svg class="transform -rotate-90 w-full h-full">
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="#F3F4F6"
-                  stroke-width="4"
-                  fill="none"
-                />
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="#EF4444"
-                  stroke-width="4"
-                  fill="none"
-                  stroke-dasharray="175.9"
-                  stroke-dashoffset="44"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h3 class="text-4xl font-bold">13</h3>
-              <p class="text-sm text-gray-600">Abnormal Heart Rate</p>
-            </div>
-            <div class="bg-yellow-100 rounded-full p-2">
-              <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-          </div>
-          <div class="flex items-center space-x-1 text-sm text-gray-600">
-            <span>120 bpm</span>
-            <span>•</span>
-            <span>50 bpm</span>
-          </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h3 class="text-4xl font-bold">23</h3>
-              <p class="text-sm text-gray-600">Abnormal Sleep Time</p>
-            </div>
-            <div class="bg-yellow-100 rounded-full p-2">
-              <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-          </div>
-          <div class="text-sm text-gray-600">
-            <span>06h 00m</span>
-          </div>
-        </div>
-      </div>
+      <!-- Date Picker Card -->
+      <DatePickerCard />
 
       <!-- Users and Health Tracking -->
-      <div class="grid grid-cols-3 gap-6">
-        <UserList users={devices} />
-
-        <!-- Health Tracking Chart -->
-        <div class="col-span-2 bg-white rounded-lg p-6">
-          <h3 class="text-lg font-semibold mb-6">Health Tracking</h3>
-          <div class="h-[300px]">
-            <canvas id="healthChart"></canvas>
-          </div>
-
-          <!-- Legend -->
-          <div class="flex items-center justify-center space-x-6 mt-4">
-            <div class="flex items-center space-x-2">
-              <div class="w-3 h-3 rounded-full bg-red-500"></div>
-              <span class="text-sm text-gray-600">Heart Rate</span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span class="text-sm text-gray-600">Blood Oxygen</span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <div class="w-3 h-3 rounded-full bg-green-500"></div>
-              <span class="text-sm text-gray-600">Breath Rate</span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span class="text-sm text-gray-600">Stress</span>
-            </div>
-          </div>
-        </div>
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <VitalSignsDeviceList
+          devices={devices}
+          data-device-list
+          client:load
+          className="lg:col-span-5 xl:col-span-4"
+        />
+        <HealthChart
+          selectedDeviceId={devices[0]?.id}
+          client:load
+          className="lg:col-span-7 xl:col-span-8"
+        />
       </div>
 
       <!-- Sleep Monitoring and Summary -->
