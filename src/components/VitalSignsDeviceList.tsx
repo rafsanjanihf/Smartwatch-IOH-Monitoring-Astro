@@ -232,7 +232,7 @@ export default function VitalSignsDeviceList({ devices: initialDevices, classNam
             stats?.stressLevel === 'Relaxed' ? 'text-green-500' :
             'text-gray-500'
           }>🧠</span>
-          <span>{stats?.stressLevel ? `${stats.stressLevel} Stress` : 'Low Stress'}</span>
+          <span>{stats?.stressLevel ? `${stats.stressLevel} Stress` : 'No Data'}</span>
         </div>
       </div>
     );
@@ -306,9 +306,9 @@ export default function VitalSignsDeviceList({ devices: initialDevices, classNam
                     {device.name || 'Unnamed Device'}
                   </h4>
                   <p className="text-sm text-gray-500 mt-1">
-                    ID: {device.id}
+                    {/* ID: {device.id} */}
                     {device.idEmployee && (
-                      <span className="ml-2">• Employee: {device.idEmployee}</span>
+                      <span>NRP: {device.idEmployee}</span>
                     )}
                   </p>
                   

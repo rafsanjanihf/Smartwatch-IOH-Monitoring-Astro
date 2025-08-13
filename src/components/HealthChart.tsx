@@ -333,8 +333,8 @@ const HealthChart: React.FC<HealthChartProps> = ({
         top: 30
       },
       grid: {
-        left: '10%',
-        right: '10%',
+        left: '9%',
+        right: '9%',
         bottom: '15%',
         top: '20%'
       },
@@ -384,9 +384,9 @@ const HealthChart: React.FC<HealthChartProps> = ({
         },
         {
           type: 'value',
-          name: 'Stress Level',
+          name: 'Pressure',
           position: 'right',
-          offset: 60,
+          offset: 40,
           min: function(value: any) {
             // Dynamic min based on data, with some padding
             return Math.max(0, Math.floor(value.min - 10));
