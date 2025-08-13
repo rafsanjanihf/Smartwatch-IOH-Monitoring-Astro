@@ -409,13 +409,13 @@ const HealthChart: React.FC<HealthChartProps> = ({
           data: heartRateLineData,
           lineStyle: {
             color: '#EF4444',
-            width: 2
+            width: 1
           },
           itemStyle: {
             color: '#EF4444'
           },
           symbol: 'circle',
-          symbolSize: 6,
+          symbolSize: 1,
           connectNulls: false
         },
         // Blood Oxygen Normal (≥95%)
