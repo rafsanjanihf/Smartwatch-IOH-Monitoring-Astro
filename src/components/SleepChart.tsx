@@ -284,9 +284,9 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
     setSleepTimes(newSleepTimes);
 
     const timeRange = processedData.reduce(
-      (range, [time]) => ({
-        min: Math.min(range.min, time),
-        max: Math.max(range.max, time),
+      (range, [startTime, , endTime]) => ({
+        min: Math.min(range.min, startTime),
+        max: Math.max(range.max, endTime),
       }),
       { min: Infinity, max: -Infinity },
     );
