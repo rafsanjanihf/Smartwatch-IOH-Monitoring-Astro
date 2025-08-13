@@ -52,6 +52,7 @@ const HealthChart: React.FC<HealthChartProps> = ({
       let startDate, endDate;
       if (date) {
         startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
         endDate = new Date(date);
         endDate.setHours(23, 59, 59, 999);
       } else {
