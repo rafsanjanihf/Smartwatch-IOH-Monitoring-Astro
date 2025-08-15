@@ -8,7 +8,7 @@ const devicesIds = '';
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   try {
     const url = `${BASE_URL}${endpoint}`;
-    console.log('Fetching:', url); // Untuk debugging
+    //console.log('Fetching:', url); // Untuk debugging
 
     const response = await fetch(url, {
       headers: {
@@ -53,14 +53,15 @@ export const api = {
     if (date) {
       query.append('date', date);
     }
-    console.log('getAllSleepData', deviceIds, date);
+    //console.log('getAllSleepData', deviceIds, date);
+
     return fetchApi<SleepData[]>(`/sleep${query.toString() ? `?${query.toString()}` : ''}`);
   },
   getDeviceSleepData: (deviceId: string, startDate?: string, endDate?: string) => {
     const query = new URLSearchParams();
     if (startDate) query.append('startDate', startDate);
     if (endDate) query.append('endDate', endDate);
-    console.log('getDeviceSleepData', deviceId, startDate, endDate);
+    //console.log('getDeviceSleepData', deviceId, startDate, endDate);
     return fetchApi<SleepData[]>(`/sleep/device/${deviceId}${query.toString() ? `?${query.toString()}` : ''}`);
   },
   getSleepStats: (deviceId: string) => fetchApi<SleepStats>(`/sleep/stats/${deviceId}`),

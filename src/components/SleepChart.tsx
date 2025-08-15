@@ -128,7 +128,11 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
   const filterSleepDataByShift = (data: SleepData[], shiftType: string | null): SleepData[] => {
     // console.log('Filtering sleep data by shift:', shiftType, 'Data length:', data?.length);
     
-    if (!shiftType || shiftType === 'other' || !data || data.length === 0) {
+    if (!data) {
+      return [];
+    }
+    
+    if (!shiftType || shiftType === 'other' || data.length === 0) {
       // console.log('No filtering applied - returning original data');
       return data;
     }
@@ -193,6 +197,10 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
 
   useEffect(() => {
     const handleDeviceSelect = (e: CustomEvent) => {
+      if (!e.detail) {
+        console.warn('Device select event detail is null');
+        return;
+      }
       const { deviceId, shiftType } = e.detail;
       setSelectedDeviceId(deviceId);
       setCurrentShiftType(shiftType || null);

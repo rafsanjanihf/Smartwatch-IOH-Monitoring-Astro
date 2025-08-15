@@ -62,9 +62,9 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
   // Fetch schedule data based on selected date
   const fetchScheduleData = async (date: string) => {
     try {
-      console.log('Fetching schedule data for date:', date);
+      //console.logschedule data for date:', date);
       const scheduleResponse = await api.getUserShiftsByDate(date);
-      console.log('Schedule response:', scheduleResponse);
+      //console.logresponse:', scheduleResponse);
       
       // Handle both array and object response formats
       if (Array.isArray(scheduleResponse)) {
@@ -75,7 +75,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         setScheduleData([]);
       }
       
-      console.log('Schedule data set:', scheduleData);
+      //console.logdata set:', scheduleData);
     } catch (error) {
       console.error('Error fetching schedule data:', error);
       setScheduleData([]);
@@ -84,12 +84,16 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
 
   // Filter sleep data based on shift type
   const filterSleepDataByShift = (data: SleepData[], shiftType: string | null): SleepData[] => {
+    if (!data) {
+      return [];
+    }
+    
     if (!shiftType || shiftType === 'all' || shiftType === 'other') {
       return data;
     }
 
-    console.log('Filtering sleep data by shift:', shiftType);
-    console.log('Initial data length:', data.length);
+    //console.log sleep data by shift:', shiftType);
+    //console.logata length:', data.length);
 
     const filteredData = data.map(sleepRecord => {
       if (!sleepRecord.sleepMotion || sleepRecord.sleepMotion.length === 0) {
@@ -130,7 +134,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         return total + end.diff(start, 'seconds');
       }, 0);
 
-      console.log(`Device ${sleepRecord.device_id}: ${originalMotionCount} -> ${filteredSleepMotion.length} motion records, sleepTotalTime: ${sleepRecord.sleepTotalTime} -> ${newSleepTotalTime}`);
+      //console.logsleepRecord.device_id}: ${originalMotionCount} -> ${filteredSleepMotion.length} motion records, sleepTotalTime: ${sleepRecord.sleepTotalTime} -> ${newSleepTotalTime}`);
 
       return {
         ...sleepRecord,
@@ -139,7 +143,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       };
     });
     
-    console.log('Filtered data length:', filteredData.length);
+    //console.logdata length:', filteredData.length);
     return filteredData;
   };
 
@@ -227,13 +231,13 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
   // Calculate shift counts whenever scheduleData or devices change
   useEffect(() => {
     const calculateShiftCounts = () => {
-      console.log('Calculating shift counts with scheduleData:', scheduleData);
+      //console.logng shift counts with scheduleData:', scheduleData);
       const shiftCounts = devices.reduce(
         (acc, device) => {
           const deviceSchedule = scheduleData.find(schedule => schedule.device_id === device.id);
           const scheduleType = deviceSchedule?.schedule_type;
           
-          console.log(`Device ${device.id}: schedule_type = ${scheduleType}`);
+          //console.logdevice.id}: schedule_type = ${scheduleType}`);
           
           if (scheduleType === 'day') {
             acc.day++;
@@ -250,7 +254,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         { day: 0, night: 0, other: 0, total: 0 }
       );
       
-      console.log('Calculated shift counts:', shiftCounts);
+      //console.log('Calculated shift counts:', shiftCounts);
       setFilteredShiftCount(shiftCounts);
     };
 

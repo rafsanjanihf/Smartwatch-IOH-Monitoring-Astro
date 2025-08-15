@@ -30,12 +30,16 @@ export default function SleepTrackingChart({
 
   // Filter sleep data based on shift type
   const filterSleepDataByShift = (data: SleepData[], shiftType: string | null): SleepData[] => {
+    if (!data) {
+      return [];
+    }
+    
     if (!shiftType || shiftType === 'all' || shiftType === 'other') {
       return data;
     }
 
-    console.log('SleepTrackingChart - Filtering sleep data by shift:', shiftType);
-    console.log('SleepTrackingChart - Initial data length:', data.length);
+    //console.log('SleepTrackingChart - Filtering sleep data by shift:', shiftType);
+    //console.log('SleepTrackingChart - Initial data length:', data.length);
 
     const filteredData = data.map(sleepRecord => {
       if (!sleepRecord.sleepMotion || sleepRecord.sleepMotion.length === 0) {
@@ -69,7 +73,7 @@ export default function SleepTrackingChart({
         filteredSleepMotion = sleepRecord.sleepMotion;
       }
 
-      console.log(`SleepTrackingChart - Device ${sleepRecord.device_id}: ${originalMotionCount} -> ${filteredSleepMotion.length} motion records`);
+      //console.log(`SleepTrackingChart - Device ${sleepRecord.device_id}: ${originalMotionCount} -> ${filteredSleepMotion.length} motion records`);
 
       return {
         ...sleepRecord,
@@ -77,7 +81,7 @@ export default function SleepTrackingChart({
       };
     }).filter(sleepRecord => sleepRecord.sleepMotion.length > 0);
     
-    console.log('SleepTrackingChart - Filtered data length:', filteredData.length);
+    //console.log('SleepTrackingChart - Filtered data length:', filteredData.length);
     return filteredData;
   };
 
@@ -107,7 +111,7 @@ export default function SleepTrackingChart({
     const handleDateRangeChange = async (e: CustomEvent) => {
       try {
         const { start, end } = e.detail;
-        console.log('handleDateRangeChange', start, end);
+        //console.log('handleDateRangeChange', start, end);
         const data = await api.getDeviceSleepData(initialSelectedDeviceId, start, end);
         
         // Store original data and apply current shift filter
@@ -123,6 +127,10 @@ export default function SleepTrackingChart({
 
     const handleDeviceSelect = async (e: CustomEvent) => {
       try {
+        if (!e.detail) {
+          console.warn('Device select event detail is null');
+          return;
+        }
         const { deviceId, shiftType } = e.detail;
         const end = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
         const start = moment(end).format('YYYY-MM-DD');
@@ -178,7 +186,7 @@ export default function SleepTrackingChart({
     };
 
     const handleSleepDataUpdate = (e: CustomEvent) => {
-      console.log('handleSleepDataUpdate', e.detail);
+      //console.log('handleSleepDataUpdate', e.detail);
       
       // Store original data and apply current shift filter
       setOriginalSleepData(e.detail);

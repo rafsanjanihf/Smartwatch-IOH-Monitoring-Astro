@@ -69,6 +69,10 @@ try {
   document.addEventListener('DOMContentLoaded', () => {
     // Device selection handler
     document.addEventListener('device-select', ((e: CustomEvent) => {
+      if (!e.detail) {
+        console.warn('Device select event detail is null');
+        return;
+      }
       selectedDeviceId = e.detail.deviceId;
       if (startDate && endDate) {
         fetchSleepData(selectedDeviceId, startDate, endDate);
