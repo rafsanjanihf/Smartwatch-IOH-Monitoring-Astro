@@ -25,13 +25,82 @@ export default function SleepTrackingChart({
 }: SleepTrackingChartProps) {
   const [processedData, setProcessedData] = useState<ProcessedSleepData[]>([]);
   const [sleepData, setSleepData] = useState<SleepData[] | null>(initialSleepData);
+  const [currentShiftType, setCurrentShiftType] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(moment().format('YYYY-MM-DD'));
+
+  // Filter sleep data based on shift type
+  const filterSleepDataByShift = (data: SleepData[], shiftType: string | null): SleepData[] => {
+    if (!shiftType || shiftType === 'all' || shiftType === 'other') {
+      return data;
+    }
+
+    console.log('SleepTrackingChart - Filtering sleep data by shift:', shiftType);
+    console.log('SleepTrackingChart - Initial data length:', data.length);
+
+    const filteredData = data.map(sleepRecord => {
+      if (!sleepRecord.sleepMotion || sleepRecord.sleepMotion.length === 0) {
+        return sleepRecord;
+      }
+
+      const originalMotionCount = sleepRecord.sleepMotion.length;
+      const selectedDateMoment = moment(selectedDate);
+      
+      let filteredSleepMotion;
+      
+      if (shiftType === 'day') {
+        // Day shift: filter for night sleep (5:00 PM yesterday to 5:30 AM today)
+        const startTime = selectedDateMoment.clone().subtract(1, 'day').hour(17).minute(0).second(0);
+        const endTime = selectedDateMoment.clone().hour(5).minute(30).second(0);
+        
+        filteredSleepMotion = sleepRecord.sleepMotion.filter(motion => {
+          const motionStart = moment(motion.startTime);
+          return motionStart.isBetween(startTime, endTime, null, '[]');
+        });
+      } else if (shiftType === 'night') {
+        // Night shift: filter for day sleep (5:00 AM to 5:30 PM today)
+        const startTime = selectedDateMoment.clone().hour(5).minute(0).second(0);
+        const endTime = selectedDateMoment.clone().hour(17).minute(30).second(0);
+        
+        filteredSleepMotion = sleepRecord.sleepMotion.filter(motion => {
+          const motionStart = moment(motion.startTime);
+          return motionStart.isBetween(startTime, endTime, null, '[]');
+        });
+      } else {
+        filteredSleepMotion = sleepRecord.sleepMotion;
+      }
+
+      console.log(`SleepTrackingChart - Device ${sleepRecord.device_id}: ${originalMotionCount} -> ${filteredSleepMotion.length} motion records`);
+
+      return {
+        ...sleepRecord,
+        sleepMotion: filteredSleepMotion
+      };
+    }).filter(sleepRecord => sleepRecord.sleepMotion.length > 0);
+    
+    console.log('SleepTrackingChart - Filtered data length:', filteredData.length);
+    return filteredData;
+  };
 
   // Initialize data on component mount
   useEffect(() => {
     if (initialSleepData && initialSleepData.length > 0) {
-      setSleepData(initialSleepData);
+      setOriginalSleepData(initialSleepData);
+      // Apply current shift filter to initial data
+      const filteredData = filterSleepDataByShift(initialSleepData, currentShiftType);
+      setSleepData(filteredData);
     }
   }, [initialSleepData]);
+
+  // Store original unfiltered data
+  const [originalSleepData, setOriginalSleepData] = useState<SleepData[] | null>(null);
+
+  // Apply shift filter when currentShiftType changes
+  useEffect(() => {
+    if (originalSleepData && originalSleepData.length > 0) {
+      const filteredData = filterSleepDataByShift(originalSleepData, currentShiftType);
+      setSleepData(filteredData);
+    }
+  }, [currentShiftType, originalSleepData]);
 
   // Menangani perubahan perangkat dan rentang tanggal
   useEffect(() => {
@@ -40,22 +109,35 @@ export default function SleepTrackingChart({
         const { start, end } = e.detail;
         console.log('handleDateRangeChange', start, end);
         const data = await api.getDeviceSleepData(initialSelectedDeviceId, start, end);
-        setSleepData(data);
+        
+        // Store original data and apply current shift filter
+        setOriginalSleepData(data);
+        const filteredData = filterSleepDataByShift(data, currentShiftType);
+        setSleepData(filteredData);
       } catch (error) {
         console.error('Error fetching sleep data:', error);
+        setOriginalSleepData(null);
         setSleepData(null);
       }
     };
 
     const handleDeviceSelect = async (e: CustomEvent) => {
       try {
-        const { deviceId } = e.detail;
+        const { deviceId, shiftType } = e.detail;
         const end = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
         const start = moment(end).format('YYYY-MM-DD');
+        
+        // Update current shift type
+        setCurrentShiftType(shiftType || null);
+        setSelectedDate(start);
 
         // Fix timezone issue: use date string directly without UTC conversion
         const data = await api.getDeviceSleepData(deviceId, start, end);
-        setSleepData(data);
+        
+        // Store original data and apply shift filter
+        setOriginalSleepData(data);
+        const filteredData = filterSleepDataByShift(data, shiftType || null);
+        setSleepData(filteredData);
       } catch (error) {
         console.error('Error fetching sleep data:', error);
         setSleepData(null);
@@ -64,9 +146,12 @@ export default function SleepTrackingChart({
 
     const handleDatePickerChange = async (e: CustomEvent) => {
       try {
-        const selectedDate = e.detail;
+        const selectedDateFromEvent = e.detail;
         // selectedDate is now already a formatted date string from DatePickerCard
-        const formattedDate = typeof selectedDate === 'string' ? selectedDate : moment(selectedDate).format('YYYY-MM-DD');
+        const formattedDate = typeof selectedDateFromEvent === 'string' ? selectedDateFromEvent : moment(selectedDateFromEvent).format('YYYY-MM-DD');
+        
+        // Update selected date
+        setSelectedDate(formattedDate);
         
         // Fix timezone issue: use date string directly without UTC conversion
         const data = await api.getDeviceSleepData(
@@ -74,21 +159,38 @@ export default function SleepTrackingChart({
           formattedDate, 
           formattedDate
         );
-        setSleepData(data);
+        
+        // Store original data and apply current shift filter
+        setOriginalSleepData(data);
+        const filteredData = filterSleepDataByShift(data, currentShiftType);
+        setSleepData(filteredData);
       } catch (error) {
         console.error('Error fetching sleep data:', error);
         setSleepData(null);
       }
     };
 
+    const handleShiftFilterChange = (e: CustomEvent) => {
+      const newShiftType = e.detail === 'all' ? null : e.detail;
+      setCurrentShiftType(newShiftType);
+      
+      // Re-filter will be handled by useEffect that watches currentShiftType
+    };
+
     const handleSleepDataUpdate = (e: CustomEvent) => {
-      setSleepData(e.detail);
+      console.log('handleSleepDataUpdate', e.detail);
+      
+      // Store original data and apply current shift filter
+      setOriginalSleepData(e.detail);
+      const filteredData = filterSleepDataByShift(e.detail, currentShiftType);
+      setSleepData(filteredData);
     };
 
     // Menambahkan event listeners
     document.addEventListener('daterange-change', handleDateRangeChange as EventListener);
     document.addEventListener('device-select', handleDeviceSelect as EventListener);
     document.addEventListener('datepicker-range-end', handleDatePickerChange as EventListener);
+    document.addEventListener('shift-filter-change', handleShiftFilterChange as EventListener);
     document.addEventListener('sleep-data-update', handleSleepDataUpdate as EventListener);
 
     // Membersihkan event listeners
@@ -96,6 +198,7 @@ export default function SleepTrackingChart({
       document.removeEventListener('daterange-change', handleDateRangeChange as EventListener);
       document.removeEventListener('device-select', handleDeviceSelect as EventListener);
       document.removeEventListener('datepicker-range-end', handleDatePickerChange as EventListener);
+      document.removeEventListener('shift-filter-change', handleShiftFilterChange as EventListener);
       document.removeEventListener('sleep-data-update', handleSleepDataUpdate as EventListener);
     };
   }, [initialSelectedDeviceId]);

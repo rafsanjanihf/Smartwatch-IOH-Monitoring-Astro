@@ -79,6 +79,43 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
   const [isListView, setIsListView] = useState(true);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(devices[0]?.id || null);
   const [isMobile, setIsMobile] = useState(false);
+  const [currentShiftType, setCurrentShiftType] = useState<string | null>(null);
+
+  // Function to get shift badge label
+  const getShiftBadgeLabel = (shiftType: string | null): string => {
+    switch (shiftType) {
+      case 'day':
+        return 'Shift Pagi';
+      case 'night':
+        return 'Shift Malam';
+      case 'fullday':
+        return 'Shift Fullday';
+      case 'off':
+        return 'OFF';
+      case 'other':
+        return 'Shift Lainnya';
+      default:
+        return 'No Schedule';
+    }
+  };
+
+  // Function to get shift badge color
+  const getShiftBadgeColor = (shiftType: string | null): string => {
+    switch (shiftType) {
+      case 'fullday':
+        return 'bg-blue-100 text-blue-800';
+      case 'day':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'night':
+        return 'bg-purple-100 text-purple-800';
+      case 'off':
+        return 'bg-red-100 text-red-800';
+      case 'other':
+        return 'bg-gray-100 text-gray-600';
+      default:
+        return 'bg-gray-100 text-gray-600';
+    }
+  };
 
   // Initialize data on component mount
   useEffect(() => {
@@ -87,17 +124,64 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
     }
   }, [sleepData]);
 
-  const fetchSleepData = async (deviceId: string, start?: string, end?: string) => {
+  // Function to filter sleep data based on shift type
+  const filterSleepDataByShift = (data: SleepData[], shiftType: string | null): SleepData[] => {
+    // console.log('Filtering sleep data by shift:', shiftType, 'Data length:', data?.length);
+    
+    if (!shiftType || shiftType === 'other' || !data || data.length === 0) {
+      // console.log('No filtering applied - returning original data');
+      return data;
+    }
+
+    const filteredData = data.map(sleepRecord => {
+      const originalMotionCount = sleepRecord.sleepMotion.length;
+      
+      const filteredSleepMotion = sleepRecord.sleepMotion.filter(motion => {
+        const startTime = new Date(motion.startTime);
+        const hour = startTime.getHours();
+        const minute = startTime.getMinutes();
+        const timeInMinutes = hour * 60 + minute;
+
+        if (shiftType === 'day') {
+          // Shift pagi: tidur malam dari jam 17:00 (hari kemarin) s/d 5:30 (hari ini)
+          // Dalam satu hari, ini berarti dari 17:00 (1020 menit) sampai 23:59 dan dari 00:00 sampai 5:30 (330 menit)
+          const isInRange = timeInMinutes >= 1020 || timeInMinutes <= 330; // 17:00 = 1020 menit, 5:30 = 330 menit
+          return isInRange;
+        } else if (shiftType === 'night') {
+          // Shift malam: tidur siang dari jam 5:00 s/d 17:30 (hari ini)
+          const isInRange = timeInMinutes >= 300 && timeInMinutes <= 1050; // 5:00 = 300 menit, 17:30 = 1050 menit
+          return isInRange;
+        }
+
+        return true;
+      });
+
+      // console.log(`Device ${sleepRecord.device_id}: ${originalMotionCount} -> ${filteredSleepMotion.length} motion records`);
+
+      return {
+        ...sleepRecord,
+        sleepMotion: filteredSleepMotion
+      };
+    }).filter(sleepRecord => sleepRecord.sleepMotion.length > 0);
+    
+    // console.log('Filtered data length:', filteredData.length);
+    return filteredData;
+  };
+
+  const fetchSleepData = async (deviceId: string, start?: string, end?: string, shiftType?: string) => {
     try {
-      console.log('fetching sleep data', deviceId, start, end);
+      // console.log('fetching sleep data', deviceId, start, end, shiftType);
       // Fix timezone issue: use date string directly without UTC conversion
       const data = await api.getDeviceSleepData(
         deviceId,
         start,
         end,
       );
-      if (data[0].sleepMotion.length > 0) {
-        setCurrentData(data);
+      
+      if (data && data.length > 0 && data[0].sleepMotion.length > 0) {
+        // Apply shift-based filtering
+        const filteredData = filterSleepDataByShift(data, shiftType || currentShiftType);
+        setCurrentData(filteredData);
       } else {
         setCurrentData(null);
       }
@@ -109,17 +193,18 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
 
   useEffect(() => {
     const handleDeviceSelect = (e: CustomEvent) => {
-      const { deviceId } = e.detail;
+      const { deviceId, shiftType } = e.detail;
       setSelectedDeviceId(deviceId);
+      setCurrentShiftType(shiftType || null);
       const end = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
       const start = moment(end).format('YYYY-MM-DD');
-      fetchSleepData(deviceId, start, end);
+      fetchSleepData(deviceId, start, end, shiftType);
     };
 
     const handleDateRangeChange = (e: CustomEvent) => {
       const { start, end } = e.detail;
       const deviceId = document.querySelector('[data-device-list] .bg-blue-50')?.getAttribute('data-device-id');
-      if (deviceId) fetchSleepData(deviceId, start, end);
+      if (deviceId) fetchSleepData(deviceId, start, end, currentShiftType);
     };
 
     const handleDatePickerChange = (e: CustomEvent) => {
@@ -127,13 +212,26 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
       // selectedDate is now already a formatted date string from DatePickerCard
       const formattedDate = typeof selectedDate === 'string' ? selectedDate : moment(selectedDate).format('YYYY-MM-DD');
       if (selectedDeviceId) {
-        fetchSleepData(selectedDeviceId, formattedDate, formattedDate);
+        fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType);
+      }
+    };
+
+    const handleShiftChange = (e: CustomEvent) => {
+      const { shiftType } = e.detail;
+      setCurrentShiftType(shiftType);
+      
+      // Re-fetch data with new shift filter if we have a selected device
+      if (selectedDeviceId) {
+        const end = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
+        const start = moment(end).format('YYYY-MM-DD');
+        fetchSleepData(selectedDeviceId, start, end, shiftType);
       }
     };
 
     document.addEventListener('device-select', handleDeviceSelect as EventListener);
     document.addEventListener('daterange-change', handleDateRangeChange as EventListener);
     document.addEventListener('datepicker-range-end', handleDatePickerChange as EventListener);
+    document.addEventListener('shift-filter-change', handleShiftChange as EventListener);
     document.addEventListener('sleep-data-update', ((e: CustomEvent<SleepData[]>) =>
       setCurrentData(e.detail)) as EventListener);
 
@@ -141,10 +239,27 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
       document.removeEventListener('device-select', handleDeviceSelect as EventListener);
       document.removeEventListener('daterange-change', handleDateRangeChange as EventListener);
       document.removeEventListener('datepicker-range-end', handleDatePickerChange as EventListener);
+      document.removeEventListener('shift-filter-change', handleShiftChange as EventListener);
       document.removeEventListener('sleep-data-update', ((e: CustomEvent<SleepData[]>) =>
         setCurrentData(e.detail)) as EventListener);
     };
   }, [selectedDeviceId]);
+
+  // Handle shift type changes and re-filter existing data
+  useEffect(() => {
+    if (sleepData && sleepData.length > 0) {
+      const filteredData = filterSleepDataByShift(sleepData, currentShiftType);
+      setCurrentData(filteredData);
+    }
+  }, [currentShiftType]);
+
+  // Handle initial sleep data and apply current shift filter
+  useEffect(() => {
+    if (sleepData && sleepData.length > 0) {
+      const filteredData = filterSleepDataByShift(sleepData, currentShiftType);
+      setCurrentData(filteredData);
+    }
+  }, [sleepData]);
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -466,6 +581,9 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
               Sleep Monitoring
               <span className='text-sm lg:text-lg text-blue-600 font-medium ml-2'>
                 - {deviceName}
+              </span>
+              <span className={`inline-flex items-center px-2.5 py-1 ml-3 text-xs font-medium rounded-full border ${getShiftBadgeColor(currentShiftType)}`}>
+                {getShiftBadgeLabel(currentShiftType)}
               </span>
             </h5>
             <div className='flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-3 lg:px-4 py-2 rounded-lg border border-blue-200'>

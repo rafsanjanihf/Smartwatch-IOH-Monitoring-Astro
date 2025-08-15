@@ -88,7 +88,7 @@ const ShiftCalendar: React.FC<ShiftCalendarProps> = ({ devices }) => {
   };
 
   const getShiftBadge = (shiftType: string | undefined) => {
-    if (!shiftType) return { text: '-', color: 'bg-gray-100 text-gray-400' };
+    if (!shiftType) return { text: '-', color: 'bg-gray-400 text-white' };
     
     switch (shiftType) {
       case 'fullday':
@@ -100,7 +100,7 @@ const ShiftCalendar: React.FC<ShiftCalendarProps> = ({ devices }) => {
       case 'off':
         return { text: 'OFF', color: 'bg-red-500 text-white' };
       default:
-        return { text: '-', color: 'bg-gray-100 text-gray-400' };
+        return { text: '-', color: 'bg-gray-400 text-white' };
     }
   };
 

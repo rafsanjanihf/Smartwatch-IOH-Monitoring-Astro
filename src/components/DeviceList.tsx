@@ -82,6 +82,67 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
     }
   };
 
+  // Filter sleep data based on shift type
+  const filterSleepDataByShift = (data: SleepData[], shiftType: string | null): SleepData[] => {
+    if (!shiftType || shiftType === 'all' || shiftType === 'other') {
+      return data;
+    }
+
+    console.log('Filtering sleep data by shift:', shiftType);
+    console.log('Initial data length:', data.length);
+
+    const filteredData = data.map(sleepRecord => {
+      if (!sleepRecord.sleepMotion || sleepRecord.sleepMotion.length === 0) {
+        return sleepRecord;
+      }
+
+      const originalMotionCount = sleepRecord.sleepMotion.length;
+      const selectedDateMoment = moment(selectedDate);
+      
+      let filteredSleepMotion;
+      
+      if (shiftType === 'day') {
+        // Day shift: filter for night sleep (5:00 PM yesterday to 5:30 AM today)
+        const startTime = selectedDateMoment.clone().subtract(1, 'day').hour(17).minute(0).second(0);
+        const endTime = selectedDateMoment.clone().hour(5).minute(30).second(0);
+        
+        filteredSleepMotion = sleepRecord.sleepMotion.filter(motion => {
+          const motionStart = moment(motion.startTime);
+          return motionStart.isBetween(startTime, endTime, null, '[]');
+        });
+      } else if (shiftType === 'night') {
+        // Night shift: filter for day sleep (5:00 AM to 5:30 PM today)
+        const startTime = selectedDateMoment.clone().hour(5).minute(0).second(0);
+        const endTime = selectedDateMoment.clone().hour(17).minute(30).second(0);
+        
+        filteredSleepMotion = sleepRecord.sleepMotion.filter(motion => {
+          const motionStart = moment(motion.startTime);
+          return motionStart.isBetween(startTime, endTime, null, '[]');
+        });
+      } else {
+        filteredSleepMotion = sleepRecord.sleepMotion;
+      }
+
+      // Calculate new sleepTotalTime based on filtered motion data
+      const newSleepTotalTime = filteredSleepMotion.reduce((total, motion) => {
+        const start = moment(motion.startTime);
+        const end = moment(motion.endTime);
+        return total + end.diff(start, 'seconds');
+      }, 0);
+
+      console.log(`Device ${sleepRecord.device_id}: ${originalMotionCount} -> ${filteredSleepMotion.length} motion records, sleepTotalTime: ${sleepRecord.sleepTotalTime} -> ${newSleepTotalTime}`);
+
+      return {
+        ...sleepRecord,
+        sleepMotion: filteredSleepMotion,
+        sleepTotalTime: newSleepTotalTime
+      };
+    });
+    
+    console.log('Filtered data length:', filteredData.length);
+    return filteredData;
+  };
+
   // Fetch sleep data when component mounts
   useEffect(() => {
     const fetchSleepData = async (dateToUse?: string) => {
@@ -93,10 +154,13 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         let targetDate = dateToUse || selectedDate;
         
         const data = await api.getAllSleepData(deviceIds, targetDate);
-        setSleepData(data);
+        
+        // Apply shift filter if shiftFilterOption is set
+        const filteredData = filterSleepDataByShift(data, shiftFilterOption === 'all' ? null : shiftFilterOption);
+        setSleepData(filteredData);
 
-        // Calculate counts for each category
-        const counts = data.reduce(
+        // Calculate counts for each category based on filtered data
+        const counts = filteredData.reduce(
           (acc, sleep) => {
             if (sleep.sleepTotalTime > 0) {
               if (sleep.sleepTotalTime >= 21600) {
@@ -113,8 +177,8 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
           { normal: 0, abnormal: 0, nodata: 0, total: 0 },
         );
         
-        // Count devices that don't have sleep data at all
-        const devicesWithSleepData = new Set(data.map(sleep => sleep.device_id));
+        // Count devices that don't have sleep data at all (based on filtered data)
+        const devicesWithSleepData = new Set(filteredData.filter(sleep => sleep.sleepTotalTime > 0).map(sleep => sleep.device_id));
         const devicesWithoutSleepData = devices.filter(device => !devicesWithSleepData.has(device.id));
         counts.nodata += devicesWithoutSleepData.length;
         counts.total += devicesWithoutSleepData.length;
@@ -146,15 +210,19 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       
       // Add a small delay to ensure HealthChart is ready to receive the event
       setTimeout(() => {
+        // Get shift type for the first device
+        const deviceSchedule = scheduleData.find(schedule => schedule.device_id === firstDevice.id);
+        const shiftType = deviceSchedule?.schedule_type || null;
+        
         // Dispatch device-select event to notify other components
         document.dispatchEvent(
           new CustomEvent('device-select', {
-            detail: { deviceId: firstDevice.id },
+            detail: { deviceId: firstDevice.id, shiftType },
           }),
         );
       }, 100);
     }
-  }, [sortedDevices, activeDeviceId]);
+  }, [sortedDevices, activeDeviceId, scheduleData]);
 
   // Calculate shift counts whenever scheduleData or devices change
   useEffect(() => {
@@ -257,12 +325,56 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       }
     };
 
-    // Add event listener
+    const handleShiftFilterChange = async (e: CustomEvent) => {
+      try {
+        setIsLoading(true);
+        const deviceIds = devices.map((d) => d.id).join(',');
+        
+        // Re-fetch sleep data and apply new shift filter
+        const data = await api.getAllSleepData(deviceIds, selectedDate);
+        const filteredData = filterSleepDataByShift(data, e.detail === 'all' ? null : e.detail);
+        setSleepData(filteredData);
+
+        // Recalculate sleep counts based on filtered data
+        const counts = filteredData.reduce(
+          (acc, sleep) => {
+            if (sleep.sleepTotalTime > 0) {
+              if (sleep.sleepTotalTime >= 21600) {
+                acc.normal++;
+              } else {
+                acc.abnormal++;
+              }
+            } else {
+              acc.nodata++;
+            }
+            acc.total++;
+            return acc;
+          },
+          { normal: 0, abnormal: 0, nodata: 0, total: 0 },
+        );
+        
+        // Count devices that don't have sleep data at all (based on filtered data)
+        const devicesWithSleepData = new Set(filteredData.filter(sleep => sleep.sleepTotalTime > 0).map(sleep => sleep.device_id));
+        const devicesWithoutSleepData = devices.filter(device => !devicesWithSleepData.has(device.id));
+        counts.nodata += devicesWithoutSleepData.length;
+        counts.total += devicesWithoutSleepData.length;
+        
+        setFilteredSleepCount(counts);
+      } catch (error) {
+        console.error('Error handling shift filter change:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Add event listeners
     document.addEventListener('datepicker-range-end', handleDateChange as EventListener);
+    document.addEventListener('shift-filter-change', handleShiftFilterChange as EventListener);
 
     // Cleanup
     return () => {
       document.removeEventListener('datepicker-range-end', handleDateChange as EventListener);
+      document.removeEventListener('shift-filter-change', handleShiftFilterChange as EventListener);
     };
   }, [devices, scheduleData]);
 
@@ -343,9 +455,15 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
 
   const handleDeviceClick = (deviceId: string) => {
     setActiveDeviceId(deviceId);
+    
+    // Get shift type for the selected device
+    const deviceSchedule = scheduleData.find(schedule => schedule.device_id === deviceId);
+    const shiftType = deviceSchedule?.schedule_type || null;
+    
+    // Dispatch device-select event to notify other components
     document.dispatchEvent(
       new CustomEvent('device-select', {
-        detail: { deviceId },
+        detail: { deviceId, shiftType },
       }),
     );
   };
@@ -421,7 +539,17 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
             <select
               id='shift-filter'
               value={shiftFilterOption}
-              onChange={(e) => setShiftFilterOption(e.target.value as ShiftFilterOption)}
+              onChange={(e) => {
+                const newShiftFilter = e.target.value as ShiftFilterOption;
+                setShiftFilterOption(newShiftFilter);
+                
+                // Dispatch shift filter change event to notify other components
+                document.dispatchEvent(
+                  new CustomEvent('shift-filter-change', {
+                    detail: { shiftType: newShiftFilter === 'all' ? null : newShiftFilter },
+                  }),
+                );
+              }}
               className='w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
             >
               <option value='all'>All Shifts</option>
