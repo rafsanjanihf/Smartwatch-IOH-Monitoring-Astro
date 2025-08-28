@@ -501,6 +501,63 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
     );
   };
 
+  // Helper function to render sleep time based on shift
+  const renderSleepTime = (deviceSleepData: any, shiftType: string | undefined) => {
+    if (!deviceSleepData || deviceSleepData.sleepTotalTime <= 0) {
+      return null;
+    }
+
+    // If shift is 'off', show 'Off Day'
+    if (shiftType === 'off') {
+      return 'Off Day';
+    }
+
+    // Calculate filtered sleep time based on shift
+    let filteredSleepTime = 0;
+    
+    if (deviceSleepData.sleepMotion && deviceSleepData.sleepMotion.length > 0) {
+      deviceSleepData.sleepMotion.forEach((motion: any) => {
+        const startTime = new Date(motion.startTime);
+        const hour = startTime.getHours();
+        const minute = startTime.getMinutes();
+        const timeInMinutes = hour * 60 + minute;
+        const duration = (motion.endTime - motion.startTime) / 1000; // Convert to seconds
+
+        let includeInShift = false;
+
+        if (shiftType === 'day') {
+          // Shift pagi: tidur malam dari jam 17:00 s/d 5:30
+          includeInShift = timeInMinutes >= 1020 || timeInMinutes <= 330; // 17:00 = 1020 menit, 5:30 = 330 menit
+        } else if (shiftType === 'night') {
+          // Shift malam: tidur siang dari jam 5:00 s/d 17:30
+          includeInShift = timeInMinutes >= 300 && timeInMinutes <= 1050; // 5:00 = 300 menit, 17:30 = 1050 menit
+        } else {
+          // For other shifts, include all sleep time
+          includeInShift = true;
+        }
+
+        if (includeInShift) {
+          filteredSleepTime += duration;
+        }
+      });
+    } else {
+      // If no sleepMotion data, use total sleep time
+      filteredSleepTime = deviceSleepData.sleepTotalTime;
+    }
+
+    const hours = Math.floor(filteredSleepTime / 3600);
+    const mins = Math.floor((filteredSleepTime % 3600) / 60);
+    const formattedTime = `${hours}h ${mins}m`;
+
+    if (shiftType === 'day') {
+      return `${formattedTime}*`;
+    } else if (shiftType === 'night') {
+      return `${formattedTime}*`;
+    } else {
+      return formattedTime;
+    }
+  };
+
   return (
     <div className={`bg-white rounded-lg p-4 lg:p-6 ${className}`}>
 
@@ -614,17 +671,12 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
                     <p className='text-xs lg:text-sm text-gray-600'>
                       {device.idEmployee ? `${device.idEmployee} - Operator ${index + 1}` : `Operator ${index + 1}`}
                     </p>
-                    {deviceSleepData && deviceSleepData.sleepTotalTime > 0 && (
+                    {(deviceSleepData && deviceSleepData.sleepTotalTime > 0) || deviceSchedule?.schedule_type === 'off' ? (
                       <p className='text-xs text-gray-500 mt-1'>
-                        Sleep Time:{' '}
-                        {deviceSleepData.sleepTotalTime
-                          ? Math.floor(deviceSleepData.sleepTotalTime / 3600) +
-                            'h ' +
-                            Math.floor((deviceSleepData.sleepTotalTime % 3600) / 60) +
-                            'm'
-                          : ''}
+                        Total Sleep Time:{' '}
+                        {renderSleepTime(deviceSleepData, deviceSchedule?.schedule_type)}
                       </p>
-                    )}
+                    ) : null}
                   </div>
                   <div className='flex flex-col items-end gap-2'>
                     {deviceSleepData && deviceSleepData.sleepTotalTime > 0 ? (

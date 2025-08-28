@@ -641,7 +641,7 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
           (isListView ? (
             <div className='space-y-2'>
               {Object.entries({
-                'Total Sleep Time': { value: formatDuration(currentData[0].sleepTotalTime), unit: '' },
+                'Sleep Time': { value: formatDuration(sleepTimes.totalTime), unit: '' },
                 'Sleep Quality': { value: (currentData[0].sleepQuality * 100).toFixed(2), unit: '%' },
                 'Heart Rate': {
                   value: `${currentData[0].minHeartRate}-${currentData[0].maxHeartRate}`,
