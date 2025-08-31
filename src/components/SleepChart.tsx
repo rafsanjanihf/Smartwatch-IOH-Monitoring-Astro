@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import type { SleepData, Device } from '../types';
 import moment from 'moment';
+import 'moment-timezone';
 import { api } from '../utils/api';
 import { Switch } from '@headlessui/react';
 
@@ -80,6 +81,7 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(devices[0]?.id || null);
   const [isMobile, setIsMobile] = useState(false);
   const [currentShiftType, setCurrentShiftType] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(moment().format('YYYY-MM-DD'));
 
   // Function to get shift badge label
   const getShiftBadgeLabel = (shiftType: string | null): string => {
@@ -132,33 +134,67 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
       return [];
     }
     
-    if (!shiftType || shiftType === 'other' || data.length === 0) {
+    if (!shiftType || shiftType === 'all' || shiftType === 'other' || data.length === 0) {
       // console.log('No filtering applied - returning original data');
       return data;
     }
 
     const filteredData = data.map(sleepRecord => {
+      if (!sleepRecord.sleepMotion || sleepRecord.sleepMotion.length === 0) {
+        return sleepRecord;
+      }
+
       const originalMotionCount = sleepRecord.sleepMotion.length;
-      
-      const filteredSleepMotion = sleepRecord.sleepMotion.filter(motion => {
-        const startTime = new Date(motion.startTime);
-        const hour = startTime.getHours();
-        const minute = startTime.getMinutes();
-        const timeInMinutes = hour * 60 + minute;
+      const selectedDateMoment = moment(selectedDate);
 
-        if (shiftType === 'day') {
-          // Shift pagi: tidur malam dari jam 17:00 (hari kemarin) s/d 5:30 (hari ini)
-          // Dalam satu hari, ini berarti dari 17:00 (1020 menit) sampai 23:59 dan dari 00:00 sampai 5:30 (330 menit)
-          const isInRange = timeInMinutes >= 1020 || timeInMinutes <= 330; // 17:00 = 1020 menit, 5:30 = 330 menit
-          return isInRange;
-        } else if (shiftType === 'night') {
-          // Shift malam: tidur siang dari jam 5:00 s/d 17:30 (hari ini)
-          const isInRange = timeInMinutes >= 300 && timeInMinutes <= 1050; // 5:00 = 300 menit, 17:30 = 1050 menit
-          return isInRange;
-        }
+      let filteredSleepMotion;
 
-        return true;
-      });
+      if (shiftType === 'day') {
+        // Day shift: filter for night sleep (5:00 PM yesterday to 5:30 AM today)
+        const startTime = selectedDateMoment
+          .clone()
+          .subtract(1, 'day')
+          .hour(17)
+          .minute(0)
+          .second(0)
+          .millisecond(0);
+        const endTime = selectedDateMoment
+          .clone()
+          .hour(5)
+          .minute(30)
+          .second(0)
+          .millisecond(0);
+
+        filteredSleepMotion = sleepRecord.sleepMotion.filter((motion) => {
+          const motionStart = moment(motion.startTime).tz('Asia/Jakarta');
+          const motionEnd = moment(motion.endTime).tz('Asia/Jakarta');
+
+          // Check if motion overlaps with the time range
+          // Motion is included if it starts before endTime and ends after startTime
+          return (
+            motionStart.isBefore(endTime) && motionEnd.isAfter(startTime)
+          );
+        });
+      } else if (shiftType === 'night') {
+        // Night shift: filter for day sleep (5:00 AM to 5:30 PM today)
+        const startTime = selectedDateMoment
+          .clone()
+          .hour(5)
+          .minute(0)
+          .second(0);
+        const endTime = selectedDateMoment
+          .clone()
+          .hour(17)
+          .minute(30)
+          .second(0);
+
+        filteredSleepMotion = sleepRecord.sleepMotion.filter((motion) => {
+          const motionStart = moment(motion.startTime);
+          return motionStart.isBetween(startTime, endTime, null, '[]');
+        });
+      } else {
+        filteredSleepMotion = sleepRecord.sleepMotion;
+      }
 
       // console.log(`Device ${sleepRecord.device_id}: ${originalMotionCount} -> ${filteredSleepMotion.length} motion records`);
 
@@ -206,19 +242,31 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
       setCurrentShiftType(shiftType || null);
       const end = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
       const start = moment(end).format('YYYY-MM-DD');
+      
+      // Update selected date state
+      setSelectedDate(start);
+      
       fetchSleepData(deviceId, start, end, shiftType);
     };
 
     const handleDateRangeChange = (e: CustomEvent) => {
       const { start, end } = e.detail;
+      
+      // Update selected date state
+      setSelectedDate(start);
+      
       const deviceId = document.querySelector('[data-device-list] .bg-blue-50')?.getAttribute('data-device-id');
       if (deviceId) fetchSleepData(deviceId, start, end, currentShiftType);
     };
 
     const handleDatePickerChange = (e: CustomEvent) => {
-      const selectedDate = e.detail;
+      const selectedDateFromEvent = e.detail;
       // selectedDate is now already a formatted date string from DatePickerCard
-      const formattedDate = typeof selectedDate === 'string' ? selectedDate : moment(selectedDate).format('YYYY-MM-DD');
+      const formattedDate = typeof selectedDateFromEvent === 'string' ? selectedDateFromEvent : moment(selectedDateFromEvent).format('YYYY-MM-DD');
+      
+      // Update selected date state
+      setSelectedDate(formattedDate);
+      
       if (selectedDeviceId) {
         fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType);
       }
@@ -259,7 +307,7 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
       const filteredData = filterSleepDataByShift(sleepData, currentShiftType);
       setCurrentData(filteredData);
     }
-  }, [currentShiftType]);
+  }, [currentShiftType, selectedDate]);
 
   // Handle initial sleep data and apply current shift filter
   useEffect(() => {
@@ -267,7 +315,7 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
       const filteredData = filterSleepDataByShift(sleepData, currentShiftType);
       setCurrentData(filteredData);
     }
-  }, [sleepData]);
+  }, [sleepData, currentShiftType, selectedDate]);
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -370,38 +418,62 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
     const newSleepTimes = { ...initialSleepTimes };
     const activeStages = new Set<number>();
 
+    // Limit sleep duration to maximum 12 hours (43200 seconds)
+    const MAX_SLEEP_DURATION = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+    
     const sortedData = [...currentData]
       .sort((a, b) => (a.sleepMotion[0]?.startTime || 0) - (b.sleepMotion[0]?.startTime || 0))
       .flatMap(
-        (sleep) =>
-          sleep.sleepMotion
-            ?.sort((a, b) => a.startTime - b.startTime)
-            .map((motion) => {
-              const duration = (motion.endTime - motion.startTime) / 1000;
-              const stage = Object.values(SLEEP_STAGES).find((s) => s.value === motion.value);
+        (sleep) => {
+          let sleepMotions = sleep.sleepMotion?.sort((a, b) => a.startTime - b.startTime) || [];
+          
+          // If there are sleep motions, check if total duration exceeds 12 hours
+          if (sleepMotions.length > 0) {
+            const firstMotionStart = sleepMotions[0].startTime;
+            const lastMotionEnd = sleepMotions[sleepMotions.length - 1].endTime;
+            const totalDuration = lastMotionEnd - firstMotionStart;
+            
+            // If total sleep duration exceeds 12 hours, truncate to 12 hours from start
+            if (totalDuration > MAX_SLEEP_DURATION) {
+              const maxEndTime = firstMotionStart + MAX_SLEEP_DURATION;
+              sleepMotions = sleepMotions.filter(motion => motion.startTime < maxEndTime)
+                .map(motion => {
+                  // If motion extends beyond max duration, truncate it
+                  if (motion.endTime > maxEndTime) {
+                    return { ...motion, endTime: maxEndTime };
+                  }
+                  return motion;
+                });
+            }
+          }
+          
+          return sleepMotions.map((motion) => {
+            const duration = (motion.endTime - motion.startTime) / 1000;
+            const stage = Object.values(SLEEP_STAGES).find((s) => s.value === motion.value);
 
-              if (stage) {
-                processedData.push([motion.startTime, motion.value, motion.endTime]);
-                activeStages.add(motion.value);
+            if (stage) {
+              processedData.push([motion.startTime, motion.value, motion.endTime]);
+              activeStages.add(motion.value);
 
-                switch (motion.value) {
-                  case SLEEP_STAGES.AWAKE.value:
-                    newSleepTimes.awakeTime += duration;
-                    break;
-                  case SLEEP_STAGES.EYE_MOVEMENT.value:
-                    newSleepTimes.eyeMovementTime += duration;
-                    break;
-                  case SLEEP_STAGES.LIGHT_SLEEP.value:
-                    newSleepTimes.lightSleepTime += duration;
-                    break;
-                  case SLEEP_STAGES.DEEP_SLEEP.value:
-                    newSleepTimes.deepSleepTime += duration;
-                    break;
-                }
-                newSleepTimes.totalTime += duration;
+              switch (motion.value) {
+                case SLEEP_STAGES.AWAKE.value:
+                  newSleepTimes.awakeTime += duration;
+                  break;
+                case SLEEP_STAGES.EYE_MOVEMENT.value:
+                  newSleepTimes.eyeMovementTime += duration;
+                  break;
+                case SLEEP_STAGES.LIGHT_SLEEP.value:
+                  newSleepTimes.lightSleepTime += duration;
+                  break;
+                case SLEEP_STAGES.DEEP_SLEEP.value:
+                  newSleepTimes.deepSleepTime += duration;
+                  break;
               }
-              return motion;
-            }) || [],
+              newSleepTimes.totalTime += duration;
+            }
+            return motion;
+          });
+        },
       );
 
     setSleepTimes(newSleepTimes);
