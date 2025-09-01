@@ -76,8 +76,8 @@ export default function SleepTrackingChart({
             .millisecond(0);
 
           filteredSleepMotion = sleepRecord.sleepMotion.filter((motion) => {
-            const motionStart = moment(motion.startTime).tz("Asia/Jakarta");
-            const motionEnd = moment(motion.endTime).tz("Asia/Jakarta");
+            const motionStart = moment(motion.startTime);
+            const motionEnd = moment(motion.endTime);
 
             // Check if motion overlaps with the time range
             // Motion is included if it starts before endTime and ends after startTime
@@ -91,16 +91,24 @@ export default function SleepTrackingChart({
             .clone()
             .hour(5)
             .minute(0)
-            .second(0);
+            .second(0)
+            .millisecond(0);
           const endTime = selectedDateMoment
             .clone()
             .hour(17)
             .minute(30)
-            .second(0);
+            .second(0)
+            .millisecond(0);
 
           filteredSleepMotion = sleepRecord.sleepMotion.filter((motion) => {
             const motionStart = moment(motion.startTime);
-            return motionStart.isBetween(startTime, endTime, null, "[]");
+            const motionEnd = moment(motion.endTime);
+            
+            // Check if motion overlaps with the time range
+            // Motion is included if it starts before endTime and ends after startTime
+            return (
+              motionStart.isBefore(endTime) && motionEnd.isAfter(startTime)
+            );
           });
         } else {
           filteredSleepMotion = sleepRecord.sleepMotion;
@@ -317,8 +325,8 @@ export default function SleepTrackingChart({
           }
 
           try {
-            const startMoment = moment(motion.startTime).tz("Asia/Jakarta");
-            const endMoment = moment(motion.endTime).tz("Asia/Jakarta");
+            const startMoment = moment(motion.startTime);
+            const endMoment = moment(motion.endTime);
 
             if (!startMoment.isValid() || !endMoment.isValid()) {
               return;

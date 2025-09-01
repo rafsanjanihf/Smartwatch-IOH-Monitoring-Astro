@@ -25,7 +25,8 @@ export const getSleepData = async (req: Request, res: Response) => {
         "endDateUtc",
         "sleepTotalTime",
         "sleepQuality",
-        device_id
+        device_id,
+        "sleepMotion"
       FROM "SleepReport"
       WHERE "recordDay" = $1
       AND "recordMonth" = $2
