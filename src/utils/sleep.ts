@@ -17,13 +17,12 @@ export const SLEEP_STAGES = {
   DEEP_SLEEP: { value: 4, name: 'Deep Sleep', color: '#7367F0' },
 } as const;
 
-export async function fetchSleepData(deviceId: string, startDate?: string, endDate?: string) {
+export async function fetchSleepData(deviceId: string, startDate?: string) {
   try {
     // Fix timezone issue: use date string directly without UTC conversion
     return await api.getDeviceSleepData(
       deviceId,
-      startDate,
-      endDate,
+      startDate || new Date().toISOString().split('T')[0]
     );
   } catch (error) {
     console.error('Error fetching sleep data:', error);
@@ -128,8 +127,7 @@ export async function fetchAndUpdateSleepData(dateRange: DateRange): Promise<voi
     // Fix timezone issue: use date string directly without UTC conversion
     const sleepData = await api.getDeviceSleepData(
       deviceId,
-      dateRange.start,
-      dateRange.end
+      dateRange.start
     );
 
     emitEvent('sleep-data-update', sleepData);

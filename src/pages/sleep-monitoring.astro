@@ -36,8 +36,8 @@ try {
 
     sleepByDevice = await api.getDeviceSleepData(
       devices[0].id,
-      startDate.toISOString(),
-      today.toISOString()
+      startDate.toISOString().split('T')[0],
+      '+8' // Default timezone
     );
   }
 } catch (error) {
@@ -67,7 +67,6 @@ try {
   // Initialize state
   let selectedDeviceId: string | null = null;
   let startDate: string | null = null;
-  let endDate: string | null = null;
 
   // Add event listener for device selection and date range
   document.addEventListener('DOMContentLoaded', () => {
@@ -78,8 +77,8 @@ try {
         return;
       }
       selectedDeviceId = e.detail.deviceId;
-      if (startDate && endDate) {
-        fetchSleepData(selectedDeviceId, startDate, endDate);
+      if (startDate) {
+        fetchSleepData(selectedDeviceId, startDate);
       }
     }) as EventListener);
 
@@ -89,13 +88,12 @@ try {
       // selectedDate is now already a formatted date string (YYYY-MM-DD) from DatePickerCard
       const formattedDate = typeof selectedDate === 'string' ? selectedDate : selectedDate.toISOString().split('T')[0];
       startDate = formattedDate;
-      endDate = formattedDate;
       
       // Update StatisticsCards with selected date
       document.dispatchEvent(new CustomEvent('date-change', { detail: formattedDate }));
       
       if (selectedDeviceId) {
-        fetchSleepData(selectedDeviceId, startDate, endDate);
+        fetchSleepData(selectedDeviceId, startDate);
       }
     }) as EventListener);
   });
@@ -108,10 +106,13 @@ try {
 
     try {
       // Fix timezone issue: use date string directly without UTC conversion
-      const startDate = start || moment().format('YYYY-MM-DD');
-      const endDate = end || moment().format('YYYY-MM-DD');
+      const startDate = start || new Date().toISOString().split('T')[0];
+      const endDate = end || new Date().toISOString().split('T')[0];
       
-      const data = await api.getDeviceSleepData(deviceId, startDate, endDate);
+      // Get timezone offset (default +8 for Asia/Singapore)
+      const timezone = '+8';
+      
+      const data = await api.getDeviceSleepData(deviceId, startDate, timezone);
       document.dispatchEvent(new CustomEvent('sleep-data-update', { detail: data }));
     } catch (error) {
       console.error('Error fetching sleep data:', error);
@@ -154,7 +155,7 @@ try {
           className="lg:col-span-5 xl:col-span-4"
         />
         <SleepChart
-          sleepData={sleepByDevice}
+          sleepData={sleepByDevice as SleepData[]}
           devices={devices}
           client:load
           className="lg:col-span-7 xl:col-span-8"

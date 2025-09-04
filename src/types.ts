@@ -48,33 +48,24 @@ export interface HealthData {
 }
 
 export interface SleepData {
-  id: string;
-  startDateUtc: Date;
-  endDateUtc: Date;
+  deviceId: string;
+  date: string;
+  sleepTime: number;
+  originalSleepTime: number;
   sleepQuality: number;
-  sleepTotalTime: number;
-  clearTotalTime: number;
-  fastEyeTotalTime: number;
-  simpleSleepTotalTime: number;
-  deepSleepTotalTime: number;
-  maxHeartRate: number;
-  minHeartRate: number;
-  avgHeartRate: number;
-  maxBloodOxygen: number;
-  minBloodOxygen: number;
-  avgBloodOxygen: number;
-  maxBreatheRate: number;
-  minBreatheRate: number;
-  avgBreatheRate: number;
-  device_id: string;
-  sleepMotion: {
-    startTime: number;
-    endTime: number;
-    value: number;
-  }[];
-  heartRatePeriod: {
-    time: number;
-    value: number;
+  heartRate: {
+    min: number;
+    max: number;
+  };
+  bloodOxygen: {
+    min: number;
+    max: number;
+  };
+  sleepLogs: {
+    startTime: string;
+    endTime: string;
+    duration: number;
+    quality: string;
   }[];
 }
 

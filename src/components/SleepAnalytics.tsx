@@ -1,15 +1,23 @@
 interface SleepData {
-  id: string;
+  deviceId: string;
+  date: string;
+  sleepTime: number;
+  originalSleepTime: number;
   sleepQuality: number;
-  sleepTotalTime: number;
-  deepSleepTotalTime: number;
-  simpleSleepTotalTime: number;
-  fastEyeTotalTime: number;
-  maxHeartRate: number;
-  minHeartRate: number;
-  avgHeartRate: number;
-  startReal: string;
-  endReal: string;
+  heartRate: {
+    min: number;
+    max: number;
+  };
+  bloodOxygen: {
+    min: number;
+    max: number;
+  };
+  sleepLogs: {
+    startTime: string;
+    endTime: string;
+    duration: number;
+    quality: string;
+  }[];
 }
 
 interface SleepAnalyticsProps {
@@ -21,9 +29,9 @@ export default function SleepAnalytics({ sleepData }: SleepAnalyticsProps) {
   const recentData = sleepData.slice(0, 7);
   const averages = recentData.reduce(
     (acc, curr) => ({
-      totalSleep: acc.totalSleep + curr.sleepTotalTime,
+      totalSleep: acc.totalSleep + curr.sleepTime,
       quality: acc.quality + curr.sleepQuality,
-      heartRate: acc.heartRate + curr.avgHeartRate,
+      heartRate: acc.heartRate + ((curr.heartRate.min + curr.heartRate.max) / 2),
       count: acc.count + 1,
     }),
     { totalSleep: 0, quality: 0, heartRate: 0, count: 0 },

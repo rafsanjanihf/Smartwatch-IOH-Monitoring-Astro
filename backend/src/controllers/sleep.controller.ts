@@ -125,3 +125,127 @@ export const getSleepQualityStats = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Kesalahan saat mengambil statistik tidur' });
   }
 };
+
+export const getSleepStatsByDate = async (req: Request, res: Response) => {
+  try {
+    const { deviceId, date, tz } = req.query;
+    
+    if (!deviceId || !date) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'deviceId and date are required' 
+      });
+    }
+
+    // Parse date
+    const targetDate = moment(date as string).format('YYYY-MM-DD').split('-');
+    const dayOfMonth = parseInt(targetDate[2]);
+    const month = parseInt(targetDate[1]);
+    const year = parseInt(targetDate[0]);
+
+    // Query untuk mendapatkan data sleep logs dari Health table
+    const healthQuery = `
+      SELECT 
+        start_time_utc,
+        end_time_utc,
+        string_val,
+        int_val
+      FROM "Health"
+      WHERE device_id = $1
+      AND data_type = 'sleep_motion'
+      AND status = 'published'
+      AND DATE(start_time_utc) = $2
+      ORDER BY start_time_utc ASC
+    `;
+
+    const healthResult = await pool.query(healthQuery, [deviceId, date]);
+    
+    // Query untuk mendapatkan total sleep time dari SleepReport
+    const sleepReportQuery = `
+      SELECT 
+        "sleepTotalTime",
+        "sleepQuality",
+        "maxHeartRate",
+        "minHeartRate",
+        "maxBloodOxygen",
+        "minBloodOxygen"
+      FROM "SleepReport"
+      WHERE device_id = $1
+      AND "recordDay" = $2
+      AND "recordMonth" = $3
+      AND "recordYear" = $4
+      AND type = 1
+      LIMIT 1
+    `;
+
+    const sleepReportResult = await pool.query(sleepReportQuery, [deviceId, dayOfMonth, month, year]);
+    
+    // Process sleep logs
+    const sleepLogs = healthResult.rows.map(row => {
+      const startTime = moment(row.start_time_utc).format('DD/MM/YYYY HH:mm:ss');
+      const endTime = moment(row.end_time_utc).format('DD/MM/YYYY HH:mm:ss');
+      const duration = moment(row.end_time_utc).diff(moment(row.start_time_utc), 'seconds');
+      
+      // Map int_val to quality
+      let quality = 'light sleep';
+      switch (row.int_val) {
+        case 1:
+          quality = 'awake';
+          break;
+        case 2:
+          quality = 'eye movement';
+          break;
+        case 3:
+          quality = 'light sleep';
+          break;
+        case 4:
+          quality = 'deep sleep';
+          break;
+      }
+      
+      return {
+        startTime,
+        endTime,
+        duration,
+        quality
+      };
+    });
+
+    // Get sleep report data or set defaults
+    const sleepReport = sleepReportResult.rows[0] || {
+      sleepTotalTime: 0,
+      sleepQuality: 0,
+      maxHeartRate: 0,
+      minHeartRate: 0,
+      maxBloodOxygen: 0,
+      minBloodOxygen: 0
+    };
+
+    const responseData = {
+      deviceId,
+      date,
+      sleepTime: sleepReport.sleepTotalTime || 0,
+      sleepQuality: sleepReport.sleepQuality || 0,
+      heartRate: {
+        min: sleepReport.minHeartRate || 0,
+        max: sleepReport.maxHeartRate || 0
+      },
+      bloodOxygen: {
+        min: sleepReport.minBloodOxygen || 0,
+        max: sleepReport.maxBloodOxygen || 0
+      },
+      sleepLogs
+    };
+
+    res.json({
+      success: true,
+      data: responseData
+    });
+  } catch (error) {
+    console.error('Error in getSleepStatsByDate:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Kesalahan saat mengambil data tidur' 
+    });
+  }
+};

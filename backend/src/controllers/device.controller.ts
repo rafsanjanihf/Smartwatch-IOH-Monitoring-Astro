@@ -6,9 +6,9 @@ export const getDevices = async (req: Request, res: Response) => {
   try {
     let companyOwner;
     try {
-      companyOwner = req.query.companyOwner || 'teretech';
+      companyOwner = req.query.companyOwner || 'terretech';
     } catch (parseError) {
-      companyOwner = 'teretech'; // fallback ke default jika parsing gagal
+      companyOwner = 'terretech'; // fallback ke default jika parsing gagal
     }
     console.log(companyOwner);
 

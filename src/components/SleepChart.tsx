@@ -6,7 +6,7 @@ import { api } from '../utils/api';
 import { Switch } from '@headlessui/react';
 
 interface SleepChartProps {
-  sleepData: SleepData[] | null;
+  sleepData: SleepData | null;
   devices?: Device[];
   className?: string;
 }
@@ -74,7 +74,7 @@ const InfoCard = ({ label, value, unit, className = '' }: InfoCardProps) => (
 export default function SleepChart({ sleepData, devices = [], className }: SleepChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<echarts.ECharts | null>(null);
-  const [currentData, setCurrentData] = useState<SleepData[] | null>(sleepData);
+  const [currentData, setCurrentData] = useState<SleepData | null>(sleepData);
   const [sleepTimes, setSleepTimes] = useState<SleepTimes>(initialSleepTimes);
   const [isListView, setIsListView] = useState(true);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(devices[0]?.id || null);
@@ -119,70 +119,67 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
 
   // Initialize data on component mount
   useEffect(() => {
-    if (sleepData && sleepData.length > 0) {
+    if (sleepData && sleepData.sleepLogs && sleepData.sleepLogs.length > 0) {
       setCurrentData(sleepData);
     }
   }, [sleepData]);
 
   // Function to filter sleep data based on shift type
-  const filterSleepDataByShift = (data: SleepData[], shiftType: string | null): SleepData[] => {
-    // console.log('Filtering sleep data by shift:', shiftType, 'Data length:', data?.length);
+  const filterSleepDataByShift = (data: SleepData | null, shiftType: string | null): SleepData | null => {
+    // console.log('Filtering sleep data by shift:', shiftType, 'Data:', data);
     
     if (!data) {
-      return [];
+      return null;
     }
     
-    if (!shiftType || shiftType === 'other' || data.length === 0) {
+    if (!shiftType || shiftType === 'other' || !data.sleepLogs || data.sleepLogs.length === 0) {
       // console.log('No filtering applied - returning original data');
       return data;
     }
 
-    const filteredData = data.map(sleepRecord => {
-      const originalMotionCount = sleepRecord.sleepMotion.length;
-      
-      const filteredSleepMotion = sleepRecord.sleepMotion.filter(motion => {
-        const startTime = new Date(motion.startTime);
-        const hour = startTime.getHours();
-        const minute = startTime.getMinutes();
-        const timeInMinutes = hour * 60 + minute;
+    const filteredSleepLogs = data.sleepLogs.filter(log => {
+      const startTime = new Date(log.startTime);
+      const hour = startTime.getHours();
+      const minute = startTime.getMinutes();
+      const timeInMinutes = hour * 60 + minute;
 
-        if (shiftType === 'day') {
-          // Shift pagi: tidur malam dari jam 17:00 (hari kemarin) s/d 5:30 (hari ini)
-          // Dalam satu hari, ini berarti dari 17:00 (1020 menit) sampai 23:59 dan dari 00:00 sampai 5:30 (330 menit)
-          const isInRange = timeInMinutes >= 1020 || timeInMinutes <= 330; // 17:00 = 1020 menit, 5:30 = 330 menit
-          return isInRange;
-        } else if (shiftType === 'night') {
-          // Shift malam: tidur siang dari jam 5:00 s/d 17:30 (hari ini)
-          const isInRange = timeInMinutes >= 300 && timeInMinutes <= 1050; // 5:00 = 300 menit, 17:30 = 1050 menit
-          return isInRange;
-        }
+      if (shiftType === 'day') {
+        // Shift pagi: tidur malam dari jam 17:00 (hari kemarin) s/d 5:30 (hari ini)
+        const isInRange = timeInMinutes >= 1020 || timeInMinutes <= 330; // 17:00 = 1020 menit, 5:30 = 330 menit
+        return isInRange;
+      } else if (shiftType === 'night') {
+        // Shift malam: tidur siang dari jam 5:00 s/d 17:30 (hari ini)
+        const isInRange = timeInMinutes >= 300 && timeInMinutes <= 1050; // 5:00 = 300 menit, 17:30 = 1050 menit
+        return isInRange;
+      }
 
-        return true;
-      });
+      return true;
+    });
 
-      // console.log(`Device ${sleepRecord.device_id}: ${originalMotionCount} -> ${filteredSleepMotion.length} motion records`);
-
-      return {
-        ...sleepRecord,
-        sleepMotion: filteredSleepMotion
-      };
-    }).filter(sleepRecord => sleepRecord.sleepMotion.length > 0);
+    const filteredData = {
+      ...data,
+      sleepLogs: filteredSleepLogs,
+      sleepTime: filteredSleepLogs.reduce((total, log) => total + log.duration, 0)
+    };
     
-    // console.log('Filtered data length:', filteredData.length);
+    // console.log('Filtered data:', filteredData);
     return filteredData;
   };
 
   const fetchSleepData = async (deviceId: string, start?: string, end?: string, shiftType?: string) => {
     try {
       // console.log('fetching sleep data', deviceId, start, end, shiftType);
+      // Get timezone from global state or use default
+      const timezone = (window as any).globalTimezone || '+8';
+      
       // Fix timezone issue: use date string directly without UTC conversion
       const data = await api.getDeviceSleepData(
         deviceId,
-        start,
-        end,
+        start || new Date().toISOString().split('T')[0],
+        timezone
       );
       
-      if (data && data.length > 0 && data[0].sleepMotion.length > 0) {
+      if (data && data.sleepLogs && data.sleepLogs.length > 0) {
         // Apply shift-based filtering
         const filteredData = filterSleepDataByShift(data, shiftType || currentShiftType);
         setCurrentData(filteredData);
@@ -240,7 +237,7 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
     document.addEventListener('daterange-change', handleDateRangeChange as EventListener);
     document.addEventListener('datepicker-range-end', handleDatePickerChange as EventListener);
     document.addEventListener('shift-filter-change', handleShiftChange as EventListener);
-    document.addEventListener('sleep-data-update', ((e: CustomEvent<SleepData[]>) =>
+    document.addEventListener('sleep-data-update', ((e: CustomEvent<SleepData>) =>
       setCurrentData(e.detail)) as EventListener);
 
     return () => {
@@ -248,14 +245,30 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
       document.removeEventListener('daterange-change', handleDateRangeChange as EventListener);
       document.removeEventListener('datepicker-range-end', handleDatePickerChange as EventListener);
       document.removeEventListener('shift-filter-change', handleShiftChange as EventListener);
-      document.removeEventListener('sleep-data-update', ((e: CustomEvent<SleepData[]>) =>
+      document.removeEventListener('sleep-data-update', ((e: CustomEvent<SleepData>) =>
         setCurrentData(e.detail)) as EventListener);
+    };
+  }, [selectedDeviceId]);
+  
+  // Listen for timezone changes
+  useEffect(() => {
+    const handleTimezoneChange = (event: CustomEvent) => {
+      console.log('Timezone changed in SleepChart:', event.detail.timezone);
+      if (selectedDeviceId) {
+        fetchSleepData(selectedDeviceId);
+      }
+    };
+    
+    document.addEventListener('timezone-change', handleTimezoneChange as EventListener);
+    
+    return () => {
+      document.removeEventListener('timezone-change', handleTimezoneChange as EventListener);
     };
   }, [selectedDeviceId]);
 
   // Handle shift type changes and re-filter existing data
   useEffect(() => {
-    if (sleepData && sleepData.length > 0) {
+    if (sleepData && sleepData.sleepLogs && sleepData.sleepLogs.length > 0) {
       const filteredData = filterSleepDataByShift(sleepData, currentShiftType);
       setCurrentData(filteredData);
     }
@@ -263,7 +276,7 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
 
   // Handle initial sleep data and apply current shift filter
   useEffect(() => {
-    if (sleepData && sleepData.length > 0) {
+    if (sleepData && sleepData.sleepLogs && sleepData.sleepLogs.length > 0) {
       const filteredData = filterSleepDataByShift(sleepData, currentShiftType);
       setCurrentData(filteredData);
     }
@@ -292,7 +305,7 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
   }, []);
 
   useEffect(() => {
-    if (!chartInstance.current || !currentData?.length) {
+    if (!chartInstance.current || !currentData?.sleepLogs?.length) {
       if (chartInstance.current) {
         const now = new Date();
         const startOfDay = new Date(now);
@@ -366,53 +379,96 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
       return;
     }
 
-    const processedData: Array<[number, number, number]> = [];
+    const processedData: Array<[number, number, number, number]> = [];
     const newSleepTimes = { ...initialSleepTimes };
     const activeStages = new Set<number>();
 
-    const sortedData = [...currentData]
-      .sort((a, b) => (a.sleepMotion[0]?.startTime || 0) - (b.sleepMotion[0]?.startTime || 0))
-      .flatMap(
-        (sleep) =>
-          sleep.sleepMotion
-            ?.sort((a, b) => a.startTime - b.startTime)
-            .map((motion) => {
-              const duration = (motion.endTime - motion.startTime) / 1000;
-              const stage = Object.values(SLEEP_STAGES).find((s) => s.value === motion.value);
+    // Process sleepLogs for new API structure
+    if (currentData && currentData.sleepLogs) {
+      // Use sleepTime from API response as total duration
+      newSleepTimes.totalTime = currentData.sleepTime;
+      
+      // Parse timestamp dengan format ISO 8601 (2025-09-04T00:24:06.000+08:00)
+      const parseTimestamp = (timeStr: string): number => {
+        // Validasi input
+        if (!timeStr || typeof timeStr !== 'string') {
+          console.warn('Invalid timeStr:', timeStr);
+          return Date.now();
+        }
+        
+        try {
+          // Format dari API: "2025-09-04T00:24:06.000+08:00" (ISO 8601 dengan timezone)
+          // Gunakan moment untuk parsing ISO 8601 format
+          const parsedMoment = moment(timeStr);
+          
+          if (!parsedMoment.isValid()) {
+            console.warn('Invalid moment parsing for:', timeStr);
+            return Date.now();
+          }
+          
+          return parsedMoment.valueOf();
+        } catch (error) {
+          console.error('Error parsing timestamp:', timeStr, error);
+          return Date.now();
+        }
+      };
+      
+      currentData.sleepLogs
+        .sort((a, b) => parseTimestamp(a.startTime) - parseTimestamp(b.startTime))
+        .forEach((log) => {
+          const startTime = parseTimestamp(log.startTime);
+          const endTime = parseTimestamp(log.endTime);
+          const duration = log.duration;
+          
+          // Map quality to sleep stage value
+          let stageValue: number = SLEEP_STAGES.LIGHT_SLEEP.value; // default
+          const qualityLower = log.quality.toLowerCase();
+          
+          if (qualityLower === 'awake') {
+            stageValue = SLEEP_STAGES.AWAKE.value;
+          } else if (qualityLower === 'light sleep' || qualityLower === 'light') {
+            stageValue = SLEEP_STAGES.LIGHT_SLEEP.value;
+          } else if (qualityLower === 'deep sleep' || qualityLower === 'deep') {
+            stageValue = SLEEP_STAGES.DEEP_SLEEP.value;
+          } else if (qualityLower === 'eye movement' || qualityLower === 'rem') {
+            stageValue = SLEEP_STAGES.EYE_MOVEMENT.value;
+          }
+          
+          // Store duration in seconds for tooltip
+          processedData.push([startTime, stageValue, endTime, duration]);
+          activeStages.add(stageValue);
 
-              if (stage) {
-                processedData.push([motion.startTime, motion.value, motion.endTime]);
-                activeStages.add(motion.value);
-
-                switch (motion.value) {
-                  case SLEEP_STAGES.AWAKE.value:
-                    newSleepTimes.awakeTime += duration;
-                    break;
-                  case SLEEP_STAGES.EYE_MOVEMENT.value:
-                    newSleepTimes.eyeMovementTime += duration;
-                    break;
-                  case SLEEP_STAGES.LIGHT_SLEEP.value:
-                    newSleepTimes.lightSleepTime += duration;
-                    break;
-                  case SLEEP_STAGES.DEEP_SLEEP.value:
-                    newSleepTimes.deepSleepTime += duration;
-                    break;
-                }
-                newSleepTimes.totalTime += duration;
-              }
-              return motion;
-            }) || [],
-      );
+          switch (stageValue) {
+            case SLEEP_STAGES.AWAKE.value:
+              newSleepTimes.awakeTime += duration;
+              break;
+            case SLEEP_STAGES.EYE_MOVEMENT.value:
+              newSleepTimes.eyeMovementTime += duration;
+              break;
+            case SLEEP_STAGES.LIGHT_SLEEP.value:
+              newSleepTimes.lightSleepTime += duration;
+              break;
+            case SLEEP_STAGES.DEEP_SLEEP.value:
+              newSleepTimes.deepSleepTime += duration;
+              break;
+          }
+        });
+     }
 
     setSleepTimes(newSleepTimes);
 
-    const timeRange = processedData.reduce(
-      (range, [startTime, , endTime]) => ({
-        min: Math.min(range.min, startTime),
-        max: Math.max(range.max, endTime),
-      }),
-      { min: Infinity, max: -Infinity },
-    );
+    // Calculate time range based on actual sleep data from API
+    let timeRange = { min: 0, max: 0 };
+    if (processedData.length > 0) {
+      // Use startTime from first sleepLog and endTime from last sleepLog
+      const firstDataPoint = processedData[0];
+      const lastDataPoint = processedData[processedData.length - 1];
+      
+      timeRange = {
+        min: firstDataPoint[0], // startTime from first log
+        max: lastDataPoint[2]   // endTime from last log
+      };
+    }
 
     const activeStagesList = Object.values(SLEEP_STAGES).filter((stage) => activeStages.has(stage.value));
 
@@ -425,18 +481,18 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
           const data = params.data;
           if (!data) return '';
 
-          const [startTime, stageValue, endTime] = data;
+          const [startTime, stageValue, endTime, durationInSeconds] = data;
           const stage = Object.values(SLEEP_STAGES).find((s) => s.value === stageValue)?.name || 'Unknown';
 
           // Format waktu dalam timezone lokal
           const timeStart = moment(startTime).format('DD/MM HH:mm:ss');
           const timeEnd = moment(endTime).format('DD/MM HH:mm:ss');
-          const duration = moment.duration(endTime - startTime).asMinutes();
+          const durationFormatted = formatDuration(durationInSeconds);
 
           let html = `<div style="font-size: 14px;">
             <p style="margin: 0;"><strong>Start:</strong> ${timeStart}</p>
             <p style="margin: 5px 0;"><strong>End:</strong> ${timeEnd}</p>
-            <p style="margin: 5px 0;"><strong>Duration:</strong> ${Math.round(duration)} minutes</p>
+            <p style="margin: 5px 0;"><strong>Duration:</strong> ${durationFormatted}</p>
             <p style="margin: 5px 0 0;"><strong>Stage:</strong> ${stage}</p>
           </div>`;
 
@@ -491,8 +547,7 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
           handleStyle: { color: '#3B82F6', borderColor: '#2563EB' },
           emphasis: { 
             handleLabel: {
-              show: true,
-              color: '#2563EB'
+              show: true
             },
             handleStyle: { 
               color: '#2563EB' 
@@ -502,7 +557,7 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
           start: 0,
           end: 100,
           zoomLock: false,
-          moveOnMouseMove: true,
+          moveHandleIcon: 'move',
         },
         {
           type: 'inside',
@@ -519,6 +574,7 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
             const startTime = api.value(0) as number;
             const stageValue = api.value(1) as number;
             const endTime = api.value(2) as number;
+            // const duration = api.value(3) as number; // Available if needed
             const stageIndex = activeStagesList.findIndex((s) => s.value === stageValue);
 
             const start = api.coord([startTime, stageIndex]);
@@ -543,7 +599,7 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
               }
             );
           },
-          encode: { x: [0, 2], y: 1 },
+          encode: { x: [0, 2], y: 1 }, // x uses startTime and endTime, y uses stageValue
           data: processedData,
         },
       ],
@@ -645,21 +701,19 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
           </Switch.Group>
         </div>
 
-        {currentData?.[0] &&
+        {currentData &&
           (isListView ? (
             <div className='space-y-2'>
               {Object.entries({
                 'Sleep Time': { value: formatDuration(sleepTimes.totalTime), unit: '' },
-                'Sleep Quality': { value: (currentData[0].sleepQuality * 100).toFixed(2), unit: '%' },
+                'Sleep Quality': { value: (currentData.sleepQuality * 100).toFixed(2), unit: '%' },
                 'Heart Rate': {
-                  value: `${currentData[0].minHeartRate}-${currentData[0].maxHeartRate}`,
+                  value: `${currentData.heartRate.min}-${currentData.heartRate.max}`,
                   unit: 'bpm',
-                  avg: currentData[0].avgHeartRate,
                 },
                 'Blood Oxygen': {
-                  value: `${currentData[0].minBloodOxygen}-${currentData[0].maxBloodOxygen}`,
+                  value: `${currentData.bloodOxygen.min}-${currentData.bloodOxygen.max}`,
                   unit: '%',
-                  avg: currentData[0].avgBloodOxygen,
                 },
               }).map(([label, data]) => (
                 <div key={label} className='flex items-center justify-between p-3 bg-gray-50 rounded-lg'>
@@ -667,28 +721,22 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
                   <span className='font-semibold'>
                     {data.value}
                     {data.unit && <span className='text-sm text-gray-500 ml-1'>{data.unit}</span>}
-                    {/* {data.avg && (
-                      <span className='text-sm text-gray-500 ml-2'>
-                        (avg: {Math.round(data.avg)}
-                        {data.unit})
-                      </span>
-                    )} */}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
             <div className='grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-4'>
-              <InfoCard label='Total Sleep Time' value={formatDuration(currentData[0].sleepTotalTime)} />
-              <InfoCard label='Sleep Quality' value={(currentData[0].sleepQuality * 100).toFixed(2)} unit='%' />
+              <InfoCard label='Total Sleep Time' value={formatDuration(currentData.sleepTime)} />
+              <InfoCard label='Sleep Quality' value={(currentData.sleepQuality * 100).toFixed(2)} unit='%' />
               <InfoCard
                 label='Heart Rate'
-                value={`${currentData[0].minHeartRate}-${currentData[0].maxHeartRate}`}
+                value={`${currentData.heartRate.min}-${currentData.heartRate.max}`}
                 unit='bpm'
               />
               <InfoCard
                 label='Blood Oxygen'
-                value={`${currentData[0].minBloodOxygen}-${currentData[0].maxBloodOxygen}`}
+                value={`${currentData.bloodOxygen.min}-${currentData.bloodOxygen.max}`}
                 unit='%'
               />
             </div>
