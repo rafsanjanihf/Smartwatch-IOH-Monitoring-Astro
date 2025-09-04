@@ -160,7 +160,7 @@ try {
       <div class="grid grid-cols-1 gap-6">
         <SleepTrackingChart
           sleepData={sleepByDevice}
-          selectedDeviceId={devices[0].id}
+          selectedDeviceId={devices.length > 0 ? devices[0].id : null}
           client:load
           className="md:flex-1"
         />

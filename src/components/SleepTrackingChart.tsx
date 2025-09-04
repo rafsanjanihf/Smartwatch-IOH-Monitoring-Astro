@@ -6,7 +6,7 @@ import { api } from '../utils/api';
 
 interface SleepTrackingChartProps {
   sleepData: SleepData[] | null;
-  selectedDeviceId: string;
+  selectedDeviceId: string | null;
   className?: string;
 }
 
@@ -110,6 +110,10 @@ export default function SleepTrackingChart({
   useEffect(() => {
     const handleDateRangeChange = async (e: CustomEvent) => {
       try {
+        if (!initialSelectedDeviceId) {
+          console.warn('No device selected, skipping date range change');
+          return;
+        }
         const { start, end } = e.detail;
         //console.log('handleDateRangeChange', start, end);
         const data = await api.getDeviceSleepData(initialSelectedDeviceId, start, end);
@@ -154,6 +158,10 @@ export default function SleepTrackingChart({
 
     const handleDatePickerChange = async (e: CustomEvent) => {
       try {
+        if (!initialSelectedDeviceId) {
+          console.warn('No device selected, skipping date picker change');
+          return;
+        }
         const selectedDateFromEvent = e.detail;
         // selectedDate is now already a formatted date string from DatePickerCard
         const formattedDate = typeof selectedDateFromEvent === 'string' ? selectedDateFromEvent : moment(selectedDateFromEvent).format('YYYY-MM-DD');
