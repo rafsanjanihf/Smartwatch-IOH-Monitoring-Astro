@@ -89,16 +89,17 @@ const StatisticsCards: FC<StatisticsCardsProps> = ({
 
       <div className='bg-white p-3 lg:p-6 rounded-lg shadow-sm'>
         <div className='mb-2 lg:mb-4'>
-          <h3 className='text-lg lg:text-2xl xl:text-4xl font-bold leading-none mb-1'>{sleepStats.avgDuration} hours</h3>
+{/*           <h3 className='text-lg lg:text-2xl xl:text-4xl font-bold leading-none mb-1'>{sleepStats.avgDuration} hours</h3> */}
+          <h3 className='text-lg lg:text-2xl xl:text-4xl font-bold leading-none mb-1'>6 hours</h3>
           <p className='text-[10px] lg:text-sm text-gray-600 leading-tight whitespace-nowrap overflow-hidden text-ellipsis'>
             Recommended Sleep Time
           </p>
         </div>
-        <div className='text-[10px] lg:text-sm text-gray-600'>
+{/*         <div className='text-[10px] lg:text-sm text-gray-600'>
           <span>{sleepStats.maxDuration} h </span>
           <span>• </span>
           <span>{sleepStats.minDuration} h </span>
-        </div>
+        </div> */}
       </div>
 
       <div className='bg-white p-3 lg:p-6 rounded-lg shadow-sm'>
