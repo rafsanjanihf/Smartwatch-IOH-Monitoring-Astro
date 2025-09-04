@@ -2,7 +2,7 @@ import type { Device, Health, HealthData, SleepData, SleepStats, UserShift, Sche
 
 const BASE_URL =
   import.meta.env.MODE == 'development' ? 'http://localhost:3031/api' : 'https://sw-ioh-be.terretech.id/api'; // Sesuaikan dengan port yang benar
-const companyOwner = import.meta.env.PUBLIC_COMPANY_OWNER;
+const companyOwner = import.meta.env.COMPANY_OWNER;
 const devicesIds = '';
 // Fungsi helper untuk fetch dengan error handling
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
