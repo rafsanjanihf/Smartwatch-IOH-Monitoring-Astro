@@ -2,13 +2,14 @@ import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import react from '@astrojs/react';
 
-import sentry from '@sentry/astro';
-import spotlightjs from '@spotlightjs/astro';
+// import sentry from '@sentry/astro';
+// import spotlightjs from '@spotlightjs/astro';
 
 import cloudflare from '@astrojs/cloudflare';
 
 export default defineConfig({
-  integrations: [tailwind(), react(), sentry(), spotlightjs()],
+  // integrations: [tailwind(), react(), sentry(), spotlightjs()],
+  integrations: [tailwind(), react()], // Disabled sentry() and spotlightjs() to reduce error spam
   adapter: cloudflare(),
   vite: {
     build: {

@@ -67,15 +67,15 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       console.log('Schedule response:', scheduleResponse);
       
       // Handle both array and object response formats
+      let newScheduleData: UserShift[] = [];
       if (Array.isArray(scheduleResponse)) {
-        setScheduleData(scheduleResponse);
+        newScheduleData = scheduleResponse;
       } else if (scheduleResponse && scheduleResponse.all) {
-        setScheduleData(scheduleResponse.all);
-      } else {
-        setScheduleData([]);
+        newScheduleData = scheduleResponse.all;
       }
       
-      console.log('Schedule data set:', scheduleData);
+      console.log('Setting schedule data:', newScheduleData);
+      setScheduleData(newScheduleData);
     } catch (error) {
       console.error('Error fetching schedule data:', error);
       setScheduleData([]);
@@ -159,8 +159,11 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         
         const data = await api.getAllSleepData(deviceIds, targetDate);
         
+        // Ensure data is an array
+        const sleepDataArray = Array.isArray(data) ? data : [];
+        
         // Apply shift filter if shiftFilterOption is set
-        const filteredData = filterSleepDataByShift(data, shiftFilterOption === 'all' ? null : shiftFilterOption);
+        const filteredData = filterSleepDataByShift(sleepDataArray, shiftFilterOption === 'all' ? null : shiftFilterOption);
         setSleepData(filteredData);
 
         // Calculate counts for each category based on filtered data
@@ -192,6 +195,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         // Shift counts will be calculated by the dedicated useEffect
       } catch (error) {
         console.error('Error fetching sleep data:', error);
+        setSleepData([]);
       } finally {
         setIsLoading(false);
       }
@@ -205,6 +209,8 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
 
     return () => clearTimeout(timer);
   }, [devices, selectedDate]);
+
+
 
   // Auto-select first device on initial load (alphabetically first)
   useEffect(() => {
@@ -243,10 +249,8 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
             acc.day++;
           } else if (scheduleType === 'night') {
             acc.night++;
-          } else if (scheduleType && scheduleType !== 'day' && scheduleType !== 'night') {
-            acc.other++;
           } else {
-            acc.other++; // No schedule data counts as 'other'
+            acc.other++; // fullday, off, or no schedule data counts as 'other'
           }
           acc.total++;
           return acc;
@@ -336,7 +340,11 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         
         // Re-fetch sleep data and apply new shift filter
         const data = await api.getAllSleepData(deviceIds, selectedDate);
-        const filteredData = filterSleepDataByShift(data, e.detail === 'all' ? null : e.detail);
+        
+        // Ensure data is an array
+        const sleepDataArray = Array.isArray(data) ? data : [];
+        
+        const filteredData = filterSleepDataByShift(sleepDataArray, e.detail === 'all' ? null : e.detail);
         setSleepData(filteredData);
 
         // Recalculate sleep counts based on filtered data
@@ -366,6 +374,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         setFilteredSleepCount(counts);
       } catch (error) {
         console.error('Error handling shift filter change:', error);
+        setSleepData([]);
       } finally {
         setIsLoading(false);
       }
@@ -474,7 +483,8 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
 
   // Helper function to get device schedule
   const getDeviceSchedule = (deviceId: string): UserShift | null => {
-    return scheduleData.find(schedule => schedule.device_id === deviceId) || null;
+    const schedule = scheduleData.find(schedule => schedule.device_id === deviceId);
+    return schedule || null;
   };
 
 

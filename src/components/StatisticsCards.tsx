@@ -50,8 +50,12 @@ const StatisticsCards: FC<StatisticsCardsProps> = ({
       if (currentSelectedDate && deviceIds) {
         try {
           const sleepData = await api.getAllSleepData(deviceIds, currentSelectedDate);
+          
+          // Ensure sleepData is an array
+          const sleepDataArray = Array.isArray(sleepData) ? sleepData : [];
+          
           // Hitung Normal Sleep + Abnormal Sleep (exclude No Data)
-          const count = sleepData.filter(sleep => sleep.sleepTotalTime > 0).length;
+          const count = sleepDataArray.filter(sleep => sleep.sleepTotalTime > 0).length;
           setSleepRecordsCount(count);
         } catch (error) {
           console.error('Error fetching sleep data for selected date:', error);
@@ -89,16 +93,17 @@ const StatisticsCards: FC<StatisticsCardsProps> = ({
 
       <div className='bg-white p-3 lg:p-6 rounded-lg shadow-sm'>
         <div className='mb-2 lg:mb-4'>
-          <h3 className='text-lg lg:text-2xl xl:text-4xl font-bold leading-none mb-1'>{sleepStats.avgDuration} hours</h3>
+{/*           <h3 className='text-lg lg:text-2xl xl:text-4xl font-bold leading-none mb-1'>{sleepStats.avgDuration} hours</h3> */}
+          <h3 className='text-lg lg:text-2xl xl:text-4xl font-bold leading-none mb-1'>6 hours</h3>
           <p className='text-[10px] lg:text-sm text-gray-600 leading-tight whitespace-nowrap overflow-hidden text-ellipsis'>
             Recommended Sleep Time
           </p>
         </div>
-        <div className='text-[10px] lg:text-sm text-gray-600'>
+{/*         <div className='text-[10px] lg:text-sm text-gray-600'>
           <span>{sleepStats.maxDuration} h </span>
           <span>• </span>
           <span>{sleepStats.minDuration} h </span>
-        </div>
+        </div> */}
       </div>
 
       <div className='bg-white p-3 lg:p-6 rounded-lg shadow-sm'>

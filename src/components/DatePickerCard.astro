@@ -149,7 +149,7 @@
 
     // Set default date (today)
     const today = new Date();
-    endPicker.setDate(today);
+    endPicker.setDate(moment(today).format(DATE_FORMAT));
     updateSelectedDateDisplay(today);
 
     // Event listeners

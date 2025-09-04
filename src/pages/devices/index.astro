@@ -6,7 +6,8 @@ import DeviceTable from '../../components/DeviceTable';
 import { api } from '../../utils/api';
 
 // Fetch devices data
-const initialDevices = await api.getAllDevices();
+const result = await api.getAllDevices();
+const initialDevices = result || [];
 ---
 
 <Layout title="Device Management - Smartwatch Monitoring Solution">
