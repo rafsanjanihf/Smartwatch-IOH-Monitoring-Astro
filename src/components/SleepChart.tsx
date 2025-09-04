@@ -212,7 +212,7 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
     const handleDateRangeChange = (e: CustomEvent) => {
       const { start, end } = e.detail;
       const deviceId = document.querySelector('[data-device-list] .bg-blue-50')?.getAttribute('data-device-id');
-      if (deviceId) fetchSleepData(deviceId, start, end, currentShiftType);
+      if (deviceId) fetchSleepData(deviceId, start, end, currentShiftType || undefined);
     };
 
     const handleDatePickerChange = (e: CustomEvent) => {
@@ -220,7 +220,7 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
       // selectedDate is now already a formatted date string from DatePickerCard
       const formattedDate = typeof selectedDate === 'string' ? selectedDate : moment(selectedDate).format('YYYY-MM-DD');
       if (selectedDeviceId) {
-        fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType);
+fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType || undefined);
       }
     };
 
@@ -489,7 +489,15 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
           backgroundColor: '#F3F4F6',
           fillerColor: '#60A5FA',
           handleStyle: { color: '#3B82F6', borderColor: '#2563EB' },
-          emphasis: { handleStyle: { color: '#2563EB' } },
+          emphasis: { 
+            handleLabel: {
+              show: true,
+              color: '#2563EB'
+            },
+            handleStyle: { 
+              color: '#2563EB' 
+            }
+          },
           textStyle: { color: '#6B7280' },
           start: 0,
           end: 100,
@@ -524,7 +532,7 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
             };
 
             // Perbaikan tipe coordSys
-            const coordSys = params.coordSys as { x: number; y: number; width: number; height: number };
+            const coordSys = params.coordSys as unknown as { x: number; y: number; width: number; height: number };
             const clippedShape = echarts.graphic.clipRectByRect(rectShape, coordSys);
 
             return (

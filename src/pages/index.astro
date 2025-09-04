@@ -102,10 +102,10 @@ try {
 
     try {
       // Fix timezone issue: use date string directly without UTC conversion
-      const startDate = start || moment().format('YYYY-MM-DD');
-      const endDate = end || moment().format('YYYY-MM-DD');
+      const startDate = start || new Date().toISOString().split('T')[0];
+      const endDate = end || new Date().toISOString().split('T')[0];
       
-      const data = await api.getDeviceSleepData(deviceId, startDate, endDate);
+      const data = await (window as any).api.getDeviceSleepData(deviceId, startDate, endDate);
       document.dispatchEvent(new CustomEvent('sleep-data-update', { detail: data }));
     } catch (error) {
       console.error('Error fetching sleep data:', error);
