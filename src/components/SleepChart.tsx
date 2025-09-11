@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import type { SleepData, Device } from '../types';
 import moment from 'moment';
+import 'moment-timezone';
 import { api } from '../utils/api';
 import { Switch } from '@headlessui/react';
 
@@ -80,6 +81,7 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(devices[0]?.id || null);
   const [isMobile, setIsMobile] = useState(false);
   const [currentShiftType, setCurrentShiftType] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(moment().format('YYYY-MM-DD'));
 
   // Function to get shift badge label
   const getShiftBadgeLabel = (shiftType: string | null): string => {
@@ -203,19 +205,31 @@ export default function SleepChart({ sleepData, devices = [], className }: Sleep
       setCurrentShiftType(shiftType || null);
       const end = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
       const start = moment(end).format('YYYY-MM-DD');
+      
+      // Update selected date state
+      setSelectedDate(start);
+      
       fetchSleepData(deviceId, start, end, shiftType);
     };
 
     const handleDateRangeChange = (e: CustomEvent) => {
       const { start, end } = e.detail;
+      
+      // Update selected date state
+      setSelectedDate(start);
+      
       const deviceId = document.querySelector('[data-device-list] .bg-blue-50')?.getAttribute('data-device-id');
       if (deviceId) fetchSleepData(deviceId, start, end, currentShiftType || undefined);
     };
 
     const handleDatePickerChange = (e: CustomEvent) => {
-      const selectedDate = e.detail;
+      const selectedDateFromEvent = e.detail;
       // selectedDate is now already a formatted date string from DatePickerCard
-      const formattedDate = typeof selectedDate === 'string' ? selectedDate : moment(selectedDate).format('YYYY-MM-DD');
+      const formattedDate = typeof selectedDateFromEvent === 'string' ? selectedDateFromEvent : moment(selectedDateFromEvent).format('YYYY-MM-DD');
+      
+      // Update selected date state
+      setSelectedDate(formattedDate);
+      
       if (selectedDeviceId) {
 fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType || undefined);
       }
@@ -272,7 +286,7 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
       const filteredData = filterSleepDataByShift(sleepData, currentShiftType);
       setCurrentData(filteredData);
     }
-  }, [currentShiftType]);
+  }, [currentShiftType, selectedDate]);
 
   // Handle initial sleep data and apply current shift filter
   useEffect(() => {
@@ -280,7 +294,7 @@ fetchSleepData(selectedDeviceId, formattedDate, formattedDate, currentShiftType 
       const filteredData = filterSleepDataByShift(sleepData, currentShiftType);
       setCurrentData(filteredData);
     }
-  }, [sleepData]);
+  }, [sleepData, currentShiftType, selectedDate]);
 
   useEffect(() => {
     if (!chartRef.current) return;
