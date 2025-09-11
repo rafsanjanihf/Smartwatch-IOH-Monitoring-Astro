@@ -19,9 +19,11 @@ import * as Sentry from "@sentry/browser";
 // Fetch data devices
 let devices: Device[] = [];
 try {
-  devices = await api.getAllDevices();
+  const result = await api.getAllDevices();
+  devices = result || [];
 } catch (error) {
   console.error('Error fetching devices:', error);
+  devices = [];
 }
 
 // Fetch getDeviceSleepData
@@ -34,8 +36,7 @@ try {
 
     sleepByDevice = await api.getDeviceSleepData(
       devices[0].id,
-      startDate.toISOString(),
-      today.toISOString()
+      startDate.toISOString().split('T')[0]
     );
   }
 } catch (error) {
@@ -51,7 +52,7 @@ try {
     allSleepData = await api.getAllSleepData(deviceIds);
     
     // Hitung Normal Sleep + Abnormal Sleep (exclude No Data)
-    sleepRecordsCount = allSleepData.filter(sleep => sleep.sleepTotalTime > 0).length;
+    sleepRecordsCount = allSleepData.filter(sleep => sleep.sleepDuration > 0).length;
   }
 } catch (error) {
   console.error('Error fetching all sleep data:', error);
@@ -63,15 +64,14 @@ try {
   // Initialize state
   let selectedDeviceId: string | null = null;
   let startDate: string | null = null;
-  let endDate: string | null = null;
 
   // Add event listener for device selection and date range
   document.addEventListener('DOMContentLoaded', () => {
     // Device selection handler
     document.addEventListener('device-select', ((e: CustomEvent) => {
       selectedDeviceId = e.detail.deviceId;
-      if (startDate && endDate) {
-        fetchSleepData(selectedDeviceId, startDate, endDate);
+      if (startDate) {
+        fetchSleepData(selectedDeviceId, startDate);
       }
     }) as EventListener);
 
@@ -81,13 +81,12 @@ try {
       // selectedDate is now already a formatted date string (YYYY-MM-DD) from DatePickerCard
       const formattedDate = typeof selectedDate === 'string' ? selectedDate : selectedDate.toISOString().split('T')[0];
       startDate = formattedDate;
-      endDate = formattedDate;
       
       // Update StatisticsCards with selected date
       document.dispatchEvent(new CustomEvent('date-change', { detail: formattedDate }));
       
       if (selectedDeviceId) {
-        fetchSleepData(selectedDeviceId, startDate, endDate);
+        fetchSleepData(selectedDeviceId, startDate);
       }
     }) as EventListener);
   });
@@ -100,10 +99,10 @@ try {
 
     try {
       // Fix timezone issue: use date string directly without UTC conversion
-      const startDate = start || moment().format('YYYY-MM-DD');
-      const endDate = end || moment().format('YYYY-MM-DD');
+      const startDate = start || new Date().toISOString().split('T')[0];
+      const endDate = end || new Date().toISOString().split('T')[0];
       
-      const data = await api.getDeviceSleepData(deviceId, startDate, endDate);
+      const data = await (window as any).api.getDeviceSleepData(deviceId, startDate);
       document.dispatchEvent(new CustomEvent('sleep-data-update', { detail: data }));
     } catch (error) {
       console.error('Error fetching sleep data:', error);
@@ -147,7 +146,7 @@ try {
 
         />
         <SleepChart
-          sleepData={sleepByDevice}
+          sleepData={sleepByDevice as SleepData[]}
           devices={devices}
           client:load
           className="md:col-span-6 lg:col-span-7 xl:col-span-8"
@@ -158,7 +157,7 @@ try {
       <div class="grid grid-cols-1 gap-6">
         <SleepTrackingChart
           sleepData={sleepByDevice}
-          selectedDeviceId={devices.length > 0 ? devices[0].id : ''}
+          selectedDeviceId={devices.length > 0 ? devices[0].id : null}
           client:load
           className="md:flex-1"
         />

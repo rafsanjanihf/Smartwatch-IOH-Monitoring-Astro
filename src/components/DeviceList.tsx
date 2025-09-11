@@ -67,15 +67,15 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       console.log('Schedule response:', scheduleResponse);
       
       // Handle both array and object response formats
+      let newScheduleData: UserShift[] = [];
       if (Array.isArray(scheduleResponse)) {
-        setScheduleData(scheduleResponse);
+        newScheduleData = scheduleResponse;
       } else if (scheduleResponse && scheduleResponse.all) {
-        setScheduleData(scheduleResponse.all);
-      } else {
-        setScheduleData([]);
+        newScheduleData = scheduleResponse.all;
       }
       
-      console.log('Schedule data set:', scheduleData);
+      console.log('Setting schedule data:', newScheduleData);
+      setScheduleData(newScheduleData);
     } catch (error) {
       console.error('Error fetching schedule data:', error);
       setScheduleData([]);
@@ -152,19 +152,48 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
     const fetchSleepData = async (dateToUse?: string) => {
       try {
         setIsLoading(true);
-        const deviceIds = devices.map((d) => d.id).join(',');
         
         // Use the provided date or current selectedDate
         let targetDate = dateToUse || selectedDate;
         
-        const data = await api.getAllSleepData(deviceIds, targetDate);
+        // Get company owner from environment
+        const companyOwner = import.meta.env.COMPANY_OWNER || 'terretech';
+        
+        // Step 1: Get devices by date
+        const devicesFromAPI = await api.getDevicesByDate(targetDate, companyOwner);
+        
+        // Step 2: Get all device IDs and fetch sleep data in one call
+        const deviceIds = devicesFromAPI.map(device => device.id).join(',');
+        const sleepDataArray = await api.getAllSleepData(deviceIds, targetDate);
+        
+        // Map the results to our expected format if needed
+        const formattedSleepData = sleepDataArray.map(data => ({
+          device_id: data.deviceId,
+          sleepTotalTime: data.sleepTotalTime || 0,
+          sleepMotion: [] // Keep empty for compatibility
+        }));
         
         // Apply shift filter if shiftFilterOption is set
-        const filteredData = filterSleepDataByShift(data, shiftFilterOption === 'all' ? null : shiftFilterOption);
-        setSleepData(filteredData);
+        const filteredData = filterSleepDataByShift(formattedSleepData, shiftFilterOption === 'all' ? null : shiftFilterOption);
+        
+        // Ensure all devices have a sleep data entry, even if it's empty
+        const allDevicesSleepData = devices.map(device => {
+          const existingSleepData = filteredData.find(sleep => sleep.device_id === device.id);
+          if (existingSleepData) {
+            return existingSleepData;
+          } else {
+            return {
+              device_id: device.id,
+              sleepTotalTime: 0,
+              sleepMotion: []
+            };
+          }
+        });
+        
+        setSleepData(allDevicesSleepData);
 
         // Calculate counts for each category based on filtered data
-        const counts = filteredData.reduce(
+        const counts = allDevicesSleepData.reduce(
           (acc, sleep) => {
             if (sleep.sleepTotalTime > 0) {
               if (sleep.sleepTotalTime >= 21600) {
@@ -182,7 +211,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         );
         
         // Count devices that don't have sleep data at all (based on filtered data)
-        const devicesWithSleepData = new Set(filteredData.filter(sleep => sleep.sleepTotalTime > 0).map(sleep => sleep.device_id));
+        const devicesWithSleepData = new Set(allDevicesSleepData.filter(sleep => sleep.sleepTotalTime > 0).map(sleep => sleep.device_id));
         const devicesWithoutSleepData = devices.filter(device => !devicesWithSleepData.has(device.id));
         counts.nodata += devicesWithoutSleepData.length;
         counts.total += devicesWithoutSleepData.length;
@@ -192,6 +221,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         // Shift counts will be calculated by the dedicated useEffect
       } catch (error) {
         console.error('Error fetching sleep data:', error);
+        setSleepData([]);
       } finally {
         setIsLoading(false);
       }
@@ -206,6 +236,8 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
     return () => clearTimeout(timer);
   }, [devices, selectedDate]);
 
+
+
   // Auto-select first device on initial load (alphabetically first)
   useEffect(() => {
     if (sortedDevices.length > 0 && !activeDeviceId) {
@@ -215,7 +247,9 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       // Add a small delay to ensure HealthChart is ready to receive the event
       setTimeout(() => {
         // Get shift type for the first device
-        const deviceSchedule = scheduleData.find(schedule => schedule.device_id === firstDevice.id);
+        const deviceSchedule = Array.isArray(scheduleData) 
+          ? scheduleData.find(schedule => schedule.device_id === firstDevice.id)
+          : null;
         const shiftType = deviceSchedule?.schedule_type || null;
         
         // Dispatch device-select event to notify other components
@@ -234,7 +268,9 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
       console.log('Calculating shift counts with scheduleData:', scheduleData);
       const shiftCounts = devices.reduce(
         (acc, device) => {
-          const deviceSchedule = scheduleData.find(schedule => schedule.device_id === device.id);
+          const deviceSchedule = Array.isArray(scheduleData) 
+            ? scheduleData.find(schedule => schedule.device_id === device.id)
+            : null;
           const scheduleType = deviceSchedule?.schedule_type;
           
           console.log(`Device ${device.id}: schedule_type = ${scheduleType}`);
@@ -243,10 +279,8 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
             acc.day++;
           } else if (scheduleType === 'night') {
             acc.night++;
-          } else if (scheduleType && scheduleType !== 'day' && scheduleType !== 'night') {
-            acc.other++;
           } else {
-            acc.other++; // No schedule data counts as 'other'
+            acc.other++; // fullday, off, or no schedule data counts as 'other'
           }
           acc.total++;
           return acc;
@@ -289,14 +323,39 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         setSelectedDate(formattedDate);
 
         // Fetch both sleep data and schedule data
-        const data = await api.getAllSleepData(deviceIds, formattedDate);
-        setSleepData(data);
+        const sleepDataArray = await api.getAllSleepData(deviceIds, formattedDate);
+        
+        // Map the results to our expected format if needed
+        const formattedSleepData = sleepDataArray.map(data => ({
+          device_id: data.deviceId,
+          sleepTotalTime: data.sleepTotalTime || 0,
+          sleepMotion: [] // Keep empty for compatibility
+        }));
+        
+        // Apply shift filter if shiftFilterOption is set
+        const filteredData = filterSleepDataByShift(formattedSleepData, shiftFilterOption === 'all' ? null : shiftFilterOption);
+        
+        // Ensure all devices have a sleep data entry, even if it's empty
+        const allDevicesSleepData = devices.map(device => {
+          const existingSleepData = filteredData.find(sleep => sleep.device_id === device.id);
+          if (existingSleepData) {
+            return existingSleepData;
+          } else {
+            return {
+              device_id: device.id,
+              sleepTotalTime: 0,
+              sleepMotion: []
+            };
+          }
+        });
+        
+        setSleepData(allDevicesSleepData);
         
         // Fetch schedule data for the selected date
         await fetchScheduleData(formattedDate);
 
         // Recalculate sleep counts
-        const counts = data.reduce(
+        const counts = allDevicesSleepData.reduce(
           (acc, sleep) => {
             if (sleep.sleepTotalTime > 0) {
               if (sleep.sleepTotalTime >= 21600) {
@@ -314,7 +373,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         );
         
         // Count devices that don't have sleep data at all
-        const devicesWithSleepData = new Set(data.map(sleep => sleep.device_id));
+        const devicesWithSleepData = new Set(allDevicesSleepData.filter(sleep => sleep.sleepTotalTime > 0).map(sleep => sleep.device_id));
         const devicesWithoutSleepData = devices.filter(device => !devicesWithSleepData.has(device.id));
         counts.nodata += devicesWithoutSleepData.length;
         counts.total += devicesWithoutSleepData.length;
@@ -332,15 +391,44 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
     const handleShiftFilterChange = async (e: CustomEvent) => {
       try {
         setIsLoading(true);
-        const deviceIds = devices.map((d) => d.id).join(',');
         
-        // Re-fetch sleep data and apply new shift filter
-        const data = await api.getAllSleepData(deviceIds, selectedDate);
-        const filteredData = filterSleepDataByShift(data, e.detail === 'all' ? null : e.detail);
-        setSleepData(filteredData);
+        // Get company owner from environment
+        const companyOwner = import.meta.env.COMPANY_OWNER || 'terretech';
+        
+        // Step 1: Get devices by date
+        const devicesFromAPI = await api.getDevicesByDate(selectedDate, companyOwner);
+        
+        // Step 2: Get all device IDs and fetch sleep data in one call
+        const deviceIds = devicesFromAPI.map(device => device.id).join(',');
+        const sleepDataArray = await api.getAllSleepData(deviceIds, selectedDate);
+        
+        // Map the results to our expected format if needed
+        const formattedSleepData = sleepDataArray.map(data => ({
+          device_id: data.deviceId,
+          sleepTotalTime: data.sleepTotalTime || 0,
+          sleepMotion: [] // Keep empty for compatibility
+        }));
+        
+        const filteredData = filterSleepDataByShift(formattedSleepData, e.detail === 'all' ? null : e.detail);
+        
+        // Ensure all devices have a sleep data entry, even if it's empty
+        const allDevicesSleepData = devices.map(device => {
+          const existingSleepData = filteredData.find(sleep => sleep.device_id === device.id);
+          if (existingSleepData) {
+            return existingSleepData;
+          } else {
+            return {
+              device_id: device.id,
+              sleepTotalTime: 0,
+              sleepMotion: []
+            };
+          }
+        });
+        
+        setSleepData(allDevicesSleepData);
 
         // Recalculate sleep counts based on filtered data
-        const counts = filteredData.reduce(
+        const counts = allDevicesSleepData.reduce(
           (acc, sleep) => {
             if (sleep.sleepTotalTime > 0) {
               if (sleep.sleepTotalTime >= 21600) {
@@ -358,7 +446,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         );
         
         // Count devices that don't have sleep data at all (based on filtered data)
-        const devicesWithSleepData = new Set(filteredData.filter(sleep => sleep.sleepTotalTime > 0).map(sleep => sleep.device_id));
+        const devicesWithSleepData = new Set(allDevicesSleepData.filter(sleep => sleep.sleepTotalTime > 0).map(sleep => sleep.device_id));
         const devicesWithoutSleepData = devices.filter(device => !devicesWithSleepData.has(device.id));
         counts.nodata += devicesWithoutSleepData.length;
         counts.total += devicesWithoutSleepData.length;
@@ -366,6 +454,7 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
         setFilteredSleepCount(counts);
       } catch (error) {
         console.error('Error handling shift filter change:', error);
+        setSleepData([]);
       } finally {
         setIsLoading(false);
       }
@@ -395,7 +484,9 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
 
       // Then apply shift filter
       if (shiftFilterOption !== 'all') {
-        const deviceSchedule = scheduleData.find(schedule => schedule.device_id === device.id);
+        const deviceSchedule = Array.isArray(scheduleData) 
+          ? scheduleData.find(schedule => schedule.device_id === device.id)
+          : null;
         const scheduleType = deviceSchedule?.schedule_type;
         
         if (shiftFilterOption === 'day' && scheduleType !== 'day') {
@@ -461,7 +552,9 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
     setActiveDeviceId(deviceId);
     
     // Get shift type for the selected device
-    const deviceSchedule = scheduleData.find(schedule => schedule.device_id === deviceId);
+    const deviceSchedule = Array.isArray(scheduleData) 
+      ? scheduleData.find(schedule => schedule.device_id === deviceId)
+      : null;
     const shiftType = deviceSchedule?.schedule_type || null;
     
     // Dispatch device-select event to notify other components
@@ -474,7 +567,11 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
 
   // Helper function to get device schedule
   const getDeviceSchedule = (deviceId: string): UserShift | null => {
-    return scheduleData.find(schedule => schedule.device_id === deviceId) || null;
+    if (!Array.isArray(scheduleData)) {
+      return null;
+    }
+    const schedule = scheduleData.find(schedule => schedule.device_id === deviceId);
+    return schedule || null;
   };
 
 
@@ -676,7 +773,9 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
                         Total Sleep Time:{' '}
                         {renderSleepTime(deviceSleepData, deviceSchedule?.schedule_type)}
                       </p>
-                    ) : null}
+                    ) : (
+                      <p className='text-xs text-gray-500 mt-1'>Total Sleep Time: 0h 0m</p>
+                    )}
                   </div>
                   <div className='flex flex-col items-end gap-2'>
                     {deviceSleepData && deviceSleepData.sleepTotalTime > 0 ? (
@@ -690,6 +789,8 @@ export default function DeviceList({ devices: initialDevices, className }: Devic
                       >
                         {deviceSleepData.sleepTotalTime >= 21600 ? 'Normal Sleep' : 'Abnormal Sleep'}
                       </span>
+                    ) : deviceSchedule?.schedule_type === 'off' ? (
+                      <span className='px-2 py-1 rounded-full text-xs text-gray-800 bg-blue-100'>Off Day</span>
                     ) : (
                       <span className='px-2 py-1 rounded-full text-xs text-gray-800 bg-stone-300'>No Sleep Data</span>
                     )}

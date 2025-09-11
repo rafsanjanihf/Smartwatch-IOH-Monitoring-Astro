@@ -50,8 +50,12 @@ const StatisticsCards: FC<StatisticsCardsProps> = ({
       if (currentSelectedDate && deviceIds) {
         try {
           const sleepData = await api.getAllSleepData(deviceIds, currentSelectedDate);
+          
+          // Ensure sleepData is an array
+          const sleepDataArray = Array.isArray(sleepData) ? sleepData : [];
+          
           // Hitung Normal Sleep + Abnormal Sleep (exclude No Data)
-          const count = sleepData.filter(sleep => sleep.sleepTotalTime > 0).length;
+          const count = sleepDataArray.filter(sleep => sleep.sleepTotalTime > 0).length;
           setSleepRecordsCount(count);
         } catch (error) {
           console.error('Error fetching sleep data for selected date:', error);

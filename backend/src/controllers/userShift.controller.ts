@@ -50,6 +50,13 @@ export const getUserShifts = async (req: Request, res: Response) => {
 export const getUserShiftsByDate = async (req: Request, res: Response) => {
   try {
     const { date } = req.params;
+    let companyOwner;
+    try {
+      companyOwner = req.query.companyOwner || 'terretech';
+    } catch (parseError) {
+      companyOwner = 'terretech'; // fallback ke default jika parsing gagal
+    }
+    console.log('getUserShiftsByDate companyOwner:', companyOwner);
 
     if (!date) {
       return res.status(400).json({ error: 'Parameter tanggal diperlukan' });
@@ -60,11 +67,12 @@ export const getUserShiftsByDate = async (req: Request, res: Response) => {
              TO_CHAR(us.date, 'YYYY-MM-DD') as date, d.name as device_name, d.mac as device_mac
       FROM "UserShift" us 
       LEFT JOIN "Device" d ON us.device_id = d.id 
-      WHERE DATE(us.date) = $1
+      WHERE DATE(us.date) = $1 AND 
+            (d."companyOwner" @> ARRAY[$2]::text[] OR d."companyOwner" IS NULL)
       ORDER BY us.schedule_type, d.name
     `;
 
-    const result = await pool.query(query, [date]);
+    const result = await pool.query(query, [date, companyOwner]);
     
     // Group by schedule_type untuk memudahkan filtering di frontend
     const groupedData = {

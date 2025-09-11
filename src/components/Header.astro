@@ -14,6 +14,22 @@ import Logo from './Logo.astro';
 
     <!-- User Controls -->
     <div class="flex items-center space-x-1 sm:space-x-2 lg:space-x-3">
+      <!-- Timezone Selector -->
+      <div class="flex items-center space-x-2">
+        <label for="timezone-select" class="text-sm font-medium text-gray-700 hidden sm:block">Timezone:</label>
+        <select 
+          id="timezone-select" 
+          class="text-xs sm:text-sm border border-gray-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="+8">UTC+8 (Asia/Singapore)</option>
+          <option value="+7">UTC+7 (Asia/Jakarta)</option>
+          <option value="+9">UTC+9 (Asia/Tokyo)</option>
+          <option value="+0">UTC+0 (GMT)</option>
+          <option value="-5">UTC-5 (EST)</option>
+          <option value="-8">UTC-8 (PST)</option>
+        </select>
+      </div>
+      
       <!-- User Profile -->
       <div class="flex items-center space-x-2 ml-2">
         <!-- User name - Hidden on small screens -->
@@ -35,6 +51,37 @@ import Logo from './Logo.astro';
 </header>
 
 <script>
+  // Initialize global timezone state
+  (window as any).globalTimezone = '+8'; // Default timezone
+  
+  // Timezone management
+  function initializeTimezone() {
+    const timezoneSelect = document.getElementById('timezone-select') as HTMLSelectElement;
+    
+    if (timezoneSelect) {
+      // Load saved timezone from localStorage
+      const savedTimezone = localStorage.getItem('selectedTimezone');
+      if (savedTimezone) {
+        (window as any).globalTimezone = savedTimezone;
+        timezoneSelect.value = savedTimezone;
+      }
+      
+      // Handle timezone change
+      timezoneSelect.addEventListener('change', (e) => {
+        const selectedTimezone = (e.target as HTMLSelectElement).value;
+        (window as any).globalTimezone = selectedTimezone;
+        localStorage.setItem('selectedTimezone', selectedTimezone);
+        
+        // Dispatch custom event to notify other components
+        document.dispatchEvent(new CustomEvent('timezone-change', {
+          detail: { timezone: selectedTimezone }
+        }));
+        
+        console.log('Timezone changed to:', selectedTimezone);
+      });
+    }
+  }
+  
   // Mobile menu toggle handler
   function initializeMobileMenu() {
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
@@ -64,8 +111,11 @@ import Logo from './Logo.astro';
     }
   }
 
-  // Initialize mobile menu when DOM is ready
-  document.addEventListener('DOMContentLoaded', initializeMobileMenu);
+  // Initialize components when DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    initializeTimezone();
+    initializeMobileMenu();
+  });
 </script>
 
 <style>

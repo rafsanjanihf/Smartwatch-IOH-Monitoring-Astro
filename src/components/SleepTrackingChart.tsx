@@ -5,8 +5,8 @@ import type { SleepData } from "../types";
 import { api } from "../utils/api";
 
 interface SleepTrackingChartProps {
-  sleepData: SleepData[] | null;
-  selectedDeviceId: string;
+  sleepData: SleepData | null;
+  selectedDeviceId: string | null;
   className?: string;
 }
 
@@ -24,104 +24,60 @@ export default function SleepTrackingChart({
   className,
 }: SleepTrackingChartProps) {
   const [processedData, setProcessedData] = useState<ProcessedSleepData[]>([]);
-  const [sleepData, setSleepData] = useState<SleepData[] | null>(
-    initialSleepData
-  );
+  const [sleepData, setSleepData] = useState<SleepData | null>(initialSleepData);
   const [currentShiftType, setCurrentShiftType] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(
     moment().format("YYYY-MM-DD")
   );
 
   // Filter sleep data based on shift type
-  const filterSleepDataByShift = (
-    data: SleepData[],
-    shiftType: string | null
-  ): SleepData[] => {
-    if (!data) {
-      return [];
+  const filterSleepDataByShift = (data: SleepData | null, shiftType: string | null): SleepData | null => {
+    if (!data || !data.sleepLogs || data.sleepLogs.length === 0) {
+      return data;
     }
 
     if (!shiftType || shiftType === "all" || shiftType === "other") {
       return data;
     }
 
-    //console.log('SleepTrackingChart - Filtering sleep data by shift:', shiftType);
-    //console.log('SleepTrackingChart - Initial data length:', data.length);
+    const selectedDateMoment = moment(selectedDate);
+    let filteredSleepLogs;
+    
+    if (shiftType === 'day') {
+      // Day shift: filter for night sleep (5:00 PM yesterday to 5:30 AM today)
+      const startTime = selectedDateMoment.clone().subtract(1, 'day').hour(17).minute(0).second(0);
+      const endTime = selectedDateMoment.clone().hour(5).minute(30).second(0);
+      
+      filteredSleepLogs = data.sleepLogs.filter(log => {
+        const logStart = moment(log.startTime);
+        return logStart.isBetween(startTime, endTime, null, '[]');
+      });
+    } else if (shiftType === 'night') {
+      // Night shift: filter for day sleep (5:00 AM to 5:30 PM today)
+      const startTime = selectedDateMoment.clone().hour(5).minute(0).second(0);
+      const endTime = selectedDateMoment.clone().hour(17).minute(30).second(0);
+      
+      filteredSleepLogs = data.sleepLogs.filter(log => {
+        const logStart = moment(log.startTime);
+        return logStart.isBetween(startTime, endTime, null, '[]');
+      });
+    } else {
+      filteredSleepLogs = data.sleepLogs;
+    }
 
-    const filteredData = data
-      .map((sleepRecord) => {
-        if (!sleepRecord.sleepMotion || sleepRecord.sleepMotion.length === 0) {
-          return sleepRecord;
-        }
-
-        const originalMotionCount = sleepRecord.sleepMotion.length;
-        const selectedDateMoment = moment(selectedDate);
-
-        let filteredSleepMotion;
-
-        if (shiftType === "day") {
-          // Day shift: filter for night sleep (5:00 PM yesterday to 5:30 AM today)
-          const startTime = selectedDateMoment
-            .clone()
-            .subtract(1, "day")
-            .hour(17)
-            .minute(0)
-            .second(0)
-            .millisecond(0);
-          const endTime = selectedDateMoment
-            .clone()
-            .hour(5)
-            .minute(30)
-            .second(0)
-            .millisecond(0);
-
-          filteredSleepMotion = sleepRecord.sleepMotion.filter((motion) => {
-            const motionStart = moment(motion.startTime).tz("Asia/Jakarta");
-            const motionEnd = moment(motion.endTime).tz("Asia/Jakarta");
-
-            // Check if motion overlaps with the time range
-            // Motion is included if it starts before endTime and ends after startTime
-            return (
-              motionStart.isBefore(endTime) && motionEnd.isAfter(startTime)
-            );
-          });
-        } else if (shiftType === "night") {
-          // Night shift: filter for day sleep (5:00 AM to 5:30 PM today)
-          const startTime = selectedDateMoment
-            .clone()
-            .hour(5)
-            .minute(0)
-            .second(0);
-          const endTime = selectedDateMoment
-            .clone()
-            .hour(17)
-            .minute(30)
-            .second(0);
-
-          filteredSleepMotion = sleepRecord.sleepMotion.filter((motion) => {
-            const motionStart = moment(motion.startTime);
-            return motionStart.isBetween(startTime, endTime, null, "[]");
-          });
-        } else {
-          filteredSleepMotion = sleepRecord.sleepMotion;
-        }
-
-        //console.log(`SleepTrackingChart - Device ${sleepRecord.device_id}: ${originalMotionCount} -> ${filteredSleepMotion.length} motion records`);
-
-        return {
-          ...sleepRecord,
-          sleepMotion: filteredSleepMotion,
-        };
-      })
-      .filter((sleepRecord) => sleepRecord.sleepMotion.length > 0);
-
-    //console.log('SleepTrackingChart - Filtered data length:', filteredData.length);
-    return filteredData;
+    return {
+      ...data,
+      sleepLogs: filteredSleepLogs,
+      sleepTime: filteredSleepLogs.reduce((total, log) => total + log.duration, 0)
+    };
   };
+
+  // Store original unfiltered data
+  const [originalSleepData, setOriginalSleepData] = useState<SleepData | null>(null);
 
   // Initialize data on component mount
   useEffect(() => {
-    if (initialSleepData && initialSleepData.length > 0) {
+    if (initialSleepData && initialSleepData.sleepLogs && initialSleepData.sleepLogs.length > 0) {
       setOriginalSleepData(initialSleepData);
       // Apply current shift filter to initial data
       const filteredData = filterSleepDataByShift(
@@ -132,18 +88,11 @@ export default function SleepTrackingChart({
     }
   }, [initialSleepData]);
 
-  // Store original unfiltered data
-  const [originalSleepData, setOriginalSleepData] = useState<
-    SleepData[] | null
-  >(null);
-
   // Apply shift filter when currentShiftType changes
   useEffect(() => {
-    if (originalSleepData && originalSleepData.length > 0) {
-      const filteredData = filterSleepDataByShift(
-        originalSleepData,
-        currentShiftType
-      );
+    if (originalSleepData && originalSleepData.sleepLogs && originalSleepData.sleepLogs.length > 0) {
+      const filteredData = filterSleepDataByShift(originalSleepData, currentShiftType);
+
       setSleepData(filteredData);
     }
   }, [currentShiftType, originalSleepData]);
@@ -152,14 +101,14 @@ export default function SleepTrackingChart({
   useEffect(() => {
     const handleDateRangeChange = async (e: CustomEvent) => {
       try {
+        if (!initialSelectedDeviceId) {
+          console.warn('No device selected, skipping date range change');
+          return;
+        }
         const { start, end } = e.detail;
         //console.log('handleDateRangeChange', start, end);
-        const data = await api.getDeviceSleepData(
-          initialSelectedDeviceId,
-          start,
-          end
-        );
-
+        const data = await api.getDeviceSleepData(initialSelectedDeviceId, start);
+        
         // Store original data and apply current shift filter
         setOriginalSleepData(data);
         const filteredData = filterSleepDataByShift(data, currentShiftType);
@@ -188,8 +137,7 @@ export default function SleepTrackingChart({
         setSelectedDate(start);
 
         // Fix timezone issue: use date string directly without UTC conversion
-        const data = await api.getDeviceSleepData(deviceId, start, end);
-
+        const data = await api.getDeviceSleepData(deviceId, start);
         // Store original data and apply shift filter
         setOriginalSleepData(data);
         const filteredData = filterSleepDataByShift(data, shiftType || null);
@@ -202,6 +150,10 @@ export default function SleepTrackingChart({
 
     const handleDatePickerChange = async (e: CustomEvent) => {
       try {
+        if (!initialSelectedDeviceId) {
+          console.warn('No device selected, skipping date picker change');
+          return;
+        }
         const selectedDateFromEvent = e.detail;
         // selectedDate is now already a formatted date string from DatePickerCard
         const formattedDate =
@@ -214,8 +166,7 @@ export default function SleepTrackingChart({
 
         // Fix timezone issue: use date string directly without UTC conversion
         const data = await api.getDeviceSleepData(
-          initialSelectedDeviceId,
-          formattedDate,
+          initialSelectedDeviceId, 
           formattedDate
         );
 
@@ -294,52 +245,44 @@ export default function SleepTrackingChart({
 
   // Memproses data setiap kali sleepData berubah
   useEffect(() => {
-    const processData = (data: SleepData[] | null) => {
-      if (!data?.length) {
+    const processData = (data: SleepData | null) => {
+      if (!data || !data.sleepLogs || data.sleepLogs.length === 0) {
         setProcessedData([]);
         return;
       }
 
       const processed: ProcessedSleepData[] = [];
 
-      data.forEach((sleep) => {
-        if (!sleep?.id || !sleep?.sleepMotion?.length) {
+      data.sleepLogs.forEach((log, index) => {
+        if (!log?.startTime || !log?.endTime || !log?.quality) {
           return;
         }
 
-        sleep.sleepMotion.forEach((motion) => {
-          if (
-            !motion?.startTime ||
-            !motion?.endTime ||
-            typeof motion?.value === "undefined"
-          ) {
+        try {
+          // Parse ISO 8601 timestamp format
+          const startMoment = moment(log.startTime);
+          const endMoment = moment(log.endTime);
+
+          if (!startMoment.isValid() || !endMoment.isValid()) {
             return;
           }
 
-          try {
-            const startMoment = moment(motion.startTime).tz("Asia/Jakarta");
-            const endMoment = moment(motion.endTime).tz("Asia/Jakarta");
+          const duration = moment.duration(endMoment.diff(startMoment));
+          const hours = Math.floor(duration.asHours());
+          const minutes = duration.minutes();
+          const seconds = duration.seconds();
 
-            if (!startMoment.isValid() || !endMoment.isValid()) {
-              return;
-            }
+          processed.push({
+            id: `${data.deviceId}-${index}-${log.startTime}`,
+            startTime: startMoment.format('DD/MM/YYYY HH:mm:ss'),
+            endTime: endMoment.format('DD/MM/YYYY HH:mm:ss'),
+            duration: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
+            quality: log.quality,
+          });
+        } catch (error) {
+          console.error('Error processing sleep data entry:', error);
+        }
 
-            const duration = moment.duration(endMoment.diff(startMoment));
-            const quality = getQualityLabel(motion.value);
-
-            processed.push({
-              id: `${sleep.id}-${motion.startTime}`,
-              startTime: startMoment.format("DD/MM/YYYY HH:mm:ss"),
-              endTime: endMoment.format("DD/MM/YYYY HH:mm:ss"),
-              duration: `${Math.floor(
-                duration.asHours()
-              )}:${duration.minutes()}:${duration.seconds()}`,
-              quality: quality,
-            });
-          } catch (error) {
-            console.error("Error processing sleep data entry:", error);
-          }
-        });
       });
 
       setProcessedData(processed);
@@ -347,22 +290,6 @@ export default function SleepTrackingChart({
 
     processData(sleepData);
   }, [sleepData]);
-
-  // Add helper function for quality label
-  const getQualityLabel = (value: number): string => {
-    switch (value) {
-      case 1:
-        return "Awake";
-      case 2:
-        return "Eye Movement";
-      case 3:
-        return "Light Sleep";
-      case 4:
-        return "Deep Sleep";
-      default:
-        return "Unknown";
-    }
-  };
 
   return (
     <div className={`bg-white rounded-lg p-4 sm:p-6 ${className}`}>
