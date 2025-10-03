@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import moment from 'moment';
-import 'moment-timezone';
-import type { SleepData } from '../types';
-import { api } from '../utils/api';
+import { useEffect, useState } from "react";
+import moment from "moment";
+import "moment-timezone";
+import type { SleepData } from "../types";
+import { api } from "../utils/api";
 
 interface SleepTrackingChartProps {
   sleepData: SleepData | null;
@@ -26,15 +26,17 @@ export default function SleepTrackingChart({
   const [processedData, setProcessedData] = useState<ProcessedSleepData[]>([]);
   const [sleepData, setSleepData] = useState<SleepData | null>(initialSleepData);
   const [currentShiftType, setCurrentShiftType] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(moment().format('YYYY-MM-DD'));
+  const [selectedDate, setSelectedDate] = useState<string>(
+    moment().format("YYYY-MM-DD")
+  );
 
   // Filter sleep data based on shift type
   const filterSleepDataByShift = (data: SleepData | null, shiftType: string | null): SleepData | null => {
     if (!data || !data.sleepLogs || data.sleepLogs.length === 0) {
       return data;
     }
-    
-    if (!shiftType || shiftType === 'all' || shiftType === 'other') {
+
+    if (!shiftType || shiftType === "all" || shiftType === "other") {
       return data;
     }
 
@@ -78,7 +80,10 @@ export default function SleepTrackingChart({
     if (initialSleepData && initialSleepData.sleepLogs && initialSleepData.sleepLogs.length > 0) {
       setOriginalSleepData(initialSleepData);
       // Apply current shift filter to initial data
-      const filteredData = filterSleepDataByShift(initialSleepData, currentShiftType);
+      const filteredData = filterSleepDataByShift(
+        initialSleepData,
+        currentShiftType
+      );
       setSleepData(filteredData);
     }
   }, [initialSleepData]);
@@ -87,6 +92,7 @@ export default function SleepTrackingChart({
   useEffect(() => {
     if (originalSleepData && originalSleepData.sleepLogs && originalSleepData.sleepLogs.length > 0) {
       const filteredData = filterSleepDataByShift(originalSleepData, currentShiftType);
+
       setSleepData(filteredData);
     }
   }, [currentShiftType, originalSleepData]);
@@ -108,7 +114,7 @@ export default function SleepTrackingChart({
         const filteredData = filterSleepDataByShift(data, currentShiftType);
         setSleepData(filteredData);
       } catch (error) {
-        console.error('Error fetching sleep data:', error);
+        console.error("Error fetching sleep data:", error);
         setOriginalSleepData(null);
         setSleepData(null);
       }
@@ -117,26 +123,27 @@ export default function SleepTrackingChart({
     const handleDeviceSelect = async (e: CustomEvent) => {
       try {
         if (!e.detail) {
-          console.warn('Device select event detail is null');
+          console.warn("Device select event detail is null");
           return;
         }
         const { deviceId, shiftType } = e.detail;
-        const end = (document.getElementById('datepicker-range-end') as HTMLInputElement)?.value;
-        const start = moment(end).format('YYYY-MM-DD');
-        
+        const end = (
+          document.getElementById("datepicker-range-end") as HTMLInputElement
+        )?.value;
+        const start = moment(end).format("YYYY-MM-DD");
+
         // Update current shift type
         setCurrentShiftType(shiftType || null);
         setSelectedDate(start);
 
         // Fix timezone issue: use date string directly without UTC conversion
         const data = await api.getDeviceSleepData(deviceId, start);
-        
         // Store original data and apply shift filter
         setOriginalSleepData(data);
         const filteredData = filterSleepDataByShift(data, shiftType || null);
         setSleepData(filteredData);
       } catch (error) {
-        console.error('Error fetching sleep data:', error);
+        console.error("Error fetching sleep data:", error);
         setSleepData(null);
       }
     };
@@ -149,37 +156,40 @@ export default function SleepTrackingChart({
         }
         const selectedDateFromEvent = e.detail;
         // selectedDate is now already a formatted date string from DatePickerCard
-        const formattedDate = typeof selectedDateFromEvent === 'string' ? selectedDateFromEvent : moment(selectedDateFromEvent).format('YYYY-MM-DD');
-        
+        const formattedDate =
+          typeof selectedDateFromEvent === "string"
+            ? selectedDateFromEvent
+            : moment(selectedDateFromEvent).format("YYYY-MM-DD");
+
         // Update selected date
         setSelectedDate(formattedDate);
-        
+
         // Fix timezone issue: use date string directly without UTC conversion
         const data = await api.getDeviceSleepData(
           initialSelectedDeviceId, 
           formattedDate
         );
-        
+
         // Store original data and apply current shift filter
         setOriginalSleepData(data);
         const filteredData = filterSleepDataByShift(data, currentShiftType);
         setSleepData(filteredData);
       } catch (error) {
-        console.error('Error fetching sleep data:', error);
+        console.error("Error fetching sleep data:", error);
         setSleepData(null);
       }
     };
 
     const handleShiftFilterChange = (e: CustomEvent) => {
-      const newShiftType = e.detail === 'all' ? null : e.detail;
+      const newShiftType = e.detail === "all" ? null : e.detail;
       setCurrentShiftType(newShiftType);
-      
+
       // Re-filter will be handled by useEffect that watches currentShiftType
     };
 
     const handleSleepDataUpdate = (e: CustomEvent) => {
       //console.log('handleSleepDataUpdate', e.detail);
-      
+
       // Store original data and apply current shift filter
       setOriginalSleepData(e.detail);
       const filteredData = filterSleepDataByShift(e.detail, currentShiftType);
@@ -187,19 +197,49 @@ export default function SleepTrackingChart({
     };
 
     // Menambahkan event listeners
-    document.addEventListener('daterange-change', handleDateRangeChange as EventListener);
-    document.addEventListener('device-select', handleDeviceSelect as EventListener);
-    document.addEventListener('datepicker-range-end', handleDatePickerChange as EventListener);
-    document.addEventListener('shift-filter-change', handleShiftFilterChange as EventListener);
-    document.addEventListener('sleep-data-update', handleSleepDataUpdate as EventListener);
+    document.addEventListener(
+      "daterange-change",
+      handleDateRangeChange as EventListener
+    );
+    document.addEventListener(
+      "device-select",
+      handleDeviceSelect as EventListener
+    );
+    document.addEventListener(
+      "datepicker-range-end",
+      handleDatePickerChange as EventListener
+    );
+    document.addEventListener(
+      "shift-filter-change",
+      handleShiftFilterChange as EventListener
+    );
+    document.addEventListener(
+      "sleep-data-update",
+      handleSleepDataUpdate as EventListener
+    );
 
     // Membersihkan event listeners
     return () => {
-      document.removeEventListener('daterange-change', handleDateRangeChange as EventListener);
-      document.removeEventListener('device-select', handleDeviceSelect as EventListener);
-      document.removeEventListener('datepicker-range-end', handleDatePickerChange as EventListener);
-      document.removeEventListener('shift-filter-change', handleShiftFilterChange as EventListener);
-      document.removeEventListener('sleep-data-update', handleSleepDataUpdate as EventListener);
+      document.removeEventListener(
+        "daterange-change",
+        handleDateRangeChange as EventListener
+      );
+      document.removeEventListener(
+        "device-select",
+        handleDeviceSelect as EventListener
+      );
+      document.removeEventListener(
+        "datepicker-range-end",
+        handleDatePickerChange as EventListener
+      );
+      document.removeEventListener(
+        "shift-filter-change",
+        handleShiftFilterChange as EventListener
+      );
+      document.removeEventListener(
+        "sleep-data-update",
+        handleSleepDataUpdate as EventListener
+      );
     };
   }, [initialSelectedDeviceId]);
 
@@ -242,6 +282,7 @@ export default function SleepTrackingChart({
         } catch (error) {
           console.error('Error processing sleep data entry:', error);
         }
+
       });
 
       setProcessedData(processed);
@@ -250,42 +291,48 @@ export default function SleepTrackingChart({
     processData(sleepData);
   }, [sleepData]);
 
-
-
   return (
     <div className={`bg-white rounded-lg p-4 sm:p-6 ${className}`}>
-      <h3 className='text-lg font-semibold mb-4 sm:mb-6 truncate'>Sleep Logs</h3>
-      <div className='max-h-[calc(100vh-300px)] overflow-auto'>
-        <table className='w-full table-auto'>
-          <thead className='sticky top-0 bg-white'>
-            <tr className='border-b'>
-              <th className='p-2 sm:p-3 text-left text-xs sm:text-base font-semibold'>Start Time</th>
-              <th className='p-2 sm:p-3 text-left text-xs sm:text-base font-semibold'>End Time</th>
-              <th className='hidden sm:table-cell p-2 sm:p-3 text-left text-sm sm:text-base font-semibold'>Duration</th>
-              <th className='p-2 sm:p-3 text-left text-xs sm:text-base font-semibold'>Quality</th>
+      <h3 className="text-lg font-semibold mb-4 sm:mb-6 truncate">
+        Sleep Logs
+      </h3>
+      <div className="max-h-[calc(100vh-300px)] overflow-auto">
+        <table className="w-full table-auto">
+          <thead className="sticky top-0 bg-white">
+            <tr className="border-b">
+              <th className="p-2 sm:p-3 text-left text-xs sm:text-base font-semibold">
+                Start Time
+              </th>
+              <th className="p-2 sm:p-3 text-left text-xs sm:text-base font-semibold">
+                End Time
+              </th>
+              <th className="hidden sm:table-cell p-2 sm:p-3 text-left text-sm sm:text-base font-semibold">
+                Duration
+              </th>
+              <th className="p-2 sm:p-3 text-left text-xs sm:text-base font-semibold">
+                Quality
+              </th>
             </tr>
           </thead>
           <tbody>
             {processedData.length > 0 ? (
               processedData.map((data) => (
-                <tr key={data.id} className='border-b hover:bg-gray-50'>
-                  <td className='p-2 sm:p-3 text-xs sm:text-sm'>
-                    <div className='break-words' title={data.startTime}>
+                <tr key={data.id} className="border-b hover:bg-gray-50">
+                  <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                    <div className="break-words" title={data.startTime}>
                       {data.startTime}
                     </div>
                   </td>
-                  <td className='p-2 sm:p-3 text-xs sm:text-sm'>
-                    <div className='break-words' title={data.endTime}>
+                  <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                    <div className="break-words" title={data.endTime}>
                       {data.endTime}
                     </div>
                   </td>
-                  <td className='hidden sm:table-cell p-2 sm:p-3 text-sm'>
-                    <div title={data.duration}>
-                      {data.duration}
-                    </div>
+                  <td className="hidden sm:table-cell p-2 sm:p-3 text-sm">
+                    <div title={data.duration}>{data.duration}</div>
                   </td>
-                  <td className='p-2 sm:p-3 text-xs sm:text-sm'>
-                    <div className='break-words' title={data.quality}>
+                  <td className="p-2 sm:p-3 text-xs sm:text-sm">
+                    <div className="break-words" title={data.quality}>
                       {data.quality}
                     </div>
                   </td>
@@ -293,7 +340,10 @@ export default function SleepTrackingChart({
               ))
             ) : (
               <tr>
-                <td colSpan={4} className='p-4 text-center text-gray-500 text-sm sm:text-base'>
+                <td
+                  colSpan={4}
+                  className="p-4 text-center text-gray-500 text-sm sm:text-base"
+                >
                   Tidak ada data tidur yang tersedia
                 </td>
               </tr>
