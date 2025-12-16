@@ -1,12 +1,13 @@
 ---
-import Logo from './Logo.astro';
+// Logo temporarily hidden per client request
+// import Logo from './Logo.astro';
 ---
 
 <header class="bg-white border-b border-gray-200 fixed top-0 right-0 left-0 md:left-64 h-16 z-10">
   <div class="flex items-center justify-between h-full px-3 sm:px-4 lg:px-6">
-    <!-- Logo - Only visible on mobile -->
+    <!-- Logo - Only visible on mobile (temporarily hidden) -->
     <div class="flex items-center md:hidden">
-      <Logo size="lg" />
+      <!-- <Logo size="lg" /> -->
     </div>
 
     <!-- Spacer for desktop (hidden logo area) -->
@@ -17,8 +18,8 @@ import Logo from './Logo.astro';
       <!-- Timezone Selector -->
       <div class="flex items-center space-x-2">
         <label for="timezone-select" class="text-sm font-medium text-gray-700 hidden sm:block">Timezone:</label>
-        <select 
-          id="timezone-select" 
+        <select
+          id="timezone-select"
           class="text-xs sm:text-sm border border-gray-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="+8">UTC+8 (Asia/Singapore)</option>
@@ -29,19 +30,17 @@ import Logo from './Logo.astro';
           <option value="-8">UTC-8 (PST)</option>
         </select>
       </div>
-      
+
       <!-- User Profile -->
       <div class="flex items-center space-x-2 ml-2">
         <!-- User name - Hidden on small screens -->
         <span class="text-sm font-medium text-gray-700">Administrator</span>
-        
-        <!-- User avatar -->
+
+        <!-- User avatar (Logo temporarily hidden) -->
         <div class="relative">
-          <Logo 
-            size="sm" 
-            alt="User Avatar"
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-gray-200 hover:border-gray-300 transition-colors cursor-pointer"
-          />
+          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-gray-200 hover:border-gray-300 transition-colors cursor-pointer bg-blue-500 flex items-center justify-center">
+            <span class="text-white text-sm font-semibold">A</span>
+          </div>
           <!-- Online status indicator -->
           <span class="absolute bottom-0 right-0 h-2.5 w-2.5 bg-green-500 border-2 border-white rounded-full"></span>
         </div>
@@ -53,11 +52,11 @@ import Logo from './Logo.astro';
 <script>
   // Initialize global timezone state
   (window as any).globalTimezone = '+8'; // Default timezone
-  
+
   // Timezone management
   function initializeTimezone() {
     const timezoneSelect = document.getElementById('timezone-select') as HTMLSelectElement;
-    
+
     if (timezoneSelect) {
       // Load saved timezone from localStorage
       const savedTimezone = localStorage.getItem('selectedTimezone');
@@ -65,33 +64,33 @@ import Logo from './Logo.astro';
         (window as any).globalTimezone = savedTimezone;
         timezoneSelect.value = savedTimezone;
       }
-      
+
       // Handle timezone change
       timezoneSelect.addEventListener('change', (e) => {
         const selectedTimezone = (e.target as HTMLSelectElement).value;
         (window as any).globalTimezone = selectedTimezone;
         localStorage.setItem('selectedTimezone', selectedTimezone);
-        
+
         // Dispatch custom event to notify other components
         document.dispatchEvent(new CustomEvent('timezone-change', {
           detail: { timezone: selectedTimezone }
         }));
-        
+
         console.log('Timezone changed to:', selectedTimezone);
       });
     }
   }
-  
+
   // Mobile menu toggle handler
   function initializeMobileMenu() {
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
     const sidebar = document.querySelector('[data-sidebar]') || document.querySelector('aside');
-    
+
     if (mobileMenuToggle && sidebar) {
       mobileMenuToggle.addEventListener('click', () => {
         sidebar.classList.toggle('-translate-x-full');
         sidebar.classList.toggle('translate-x-0');
-        
+
         // Toggle overlay
         let overlay = document.getElementById('sidebar-overlay');
         if (!overlay) {
